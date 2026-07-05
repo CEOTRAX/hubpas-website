@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hubpas — Upcoming Events</title>
+  <meta name="description" content="Explore upcoming events on Hubpas. Discover concerts, meetups, and nightlife in your city.">
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Hubpas home">
+        <span class="brand-word">hubpas</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <button class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+        <ul class="nav-list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#features">Features</a></li>
+          <li><a href="events.html" aria-current="page">Events</a></li>
+        </ul>
+        <a class="cta small" href="index.html#download">Download App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="events-page">
+    <section class="events-hero">
+      <div class="container events-hero-inner">
+        <div class="events-hero-copy">
+          <h1 class="events-title">Upcoming events</h1>
+          <p class="events-sub">Discover what’s next in your city. Browse highlights now, then book instantly in the Hubpas app.</p>
+          <div class="actions">
+            <a class="cta" href="index.html#download">Download App</a>
+            <a class="cta ghost" href="index.html">Back to Home</a>
+          </div>
+        </div>
+        <div class="events-hero-panel" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="events-list">
+      <div class="container">
+        <div class="events-toolbar">
+          <div class="pill-row" role="list" aria-label="Event categories">
+            <button class="pill is-active" type="button" data-filter="all">All</button>
+            <button class="pill" type="button" data-filter="nightlife">Nightlife</button>
+            <button class="pill" type="button" data-filter="music">Music</button>
+            <button class="pill" type="button" data-filter="community">Community</button>
+          </div>
+          <div class="events-note" id="events-note">Loading events...</div>
+        </div>
+
+        <div class="events-grid" id="events-grid"></div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="container band-inner">
+        <h2>Want your event featured?</h2>
+        <p>Publish and promote your events on Hubpas. Reach the right crowd and sell tickets in minutes.</p>
+        <div class="actions">
+          <a class="cta" href="index.html#download">Download App</a>
+          <a class="cta ghost" href="index.html#features">Explore Features</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-grid">
+      <div class="foot-brand">
+        <span class="brand-word">hubpas</span>
+      </div>
+      <div class="foot-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Support</a>
+      </div>
+      <div class="foot-note">© <span id="year"></span> Hubpas. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile">
+    <div class="mobile-inner">
+      <a href="index.html">Home</a>
+      <a href="index.html#features">Features</a>
+      <a href="events.html" aria-current="page">Events</a>
+      <a class="cta small" href="index.html#download">Download App</a>
+    </div>
+  </nav>
+
+  <script src="script.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"
+    import { getFirestore, collection, getDocs, limit, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMTs10x-2tnzivvx5PW7d9r3KdfncUKpo",
+      authDomain: "dmap-50136.firebaseapp.com",
+      projectId: "dmap-50136",
+      storageBucket: "dmap-50136.firebasestorage.app",
+      messagingSenderId: "695873306591",
+      appId: "1:695873306591:web:c51485253a7c7d9849ce6a"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+
+    const grid = document.getElementById('events-grid')
+    const note = document.getElementById('events-note')
+    const pills = Array.from(document.querySelectorAll('[data-filter]'))
+    let allEvents = []
+
+    const escapeHtml = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;')
+
+    const toDate = (value) => {
+      if (!value) return null
+      if (value && typeof value.toDate === 'function') return value.toDate()
+      const date = new Date(value)
+      return Number.isNaN(date.getTime()) ? null : date
+    }
+
+    const formatEventDate = (value) => {
+      const date = toDate(value)
+      if (!date) return 'Date to be announced'
+      return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      })
+    }
+
+    const findImage = (data) => {
+      const candidates = [
+        data.coverImage,
+        data.coverUrl,
+        data.image,
+        data.imageUrl,
+        data.banner,
+        data.bannerUrl,
+        data.poster,
+        data.posterUrl,
+        data.flyer,
+        data.flyerUrl,
+        data.thumbnail,
+        data.thumbnailUrl
+      ]
+      return candidates.find(value => typeof value === 'string' && value.trim()) || ''
+    }
+
+    const pickCategory = (data) => {
+      return data.category || data.eventCategory || data.type || 'Event'
+    }
+
+    const pickHost = (data) => {
+      return data.organizerName || data.hostName || data.createdByName || data.organizerId || data.hostId || data.ownerId || 'Hubpas Organizer'
+    }
+
+    const pickSubtitle = (data) => {
+      return `By ${pickHost(data)} • ${pickCategory(data)}`
+    }
+
+    const pickLocation = (data) => {
+      return data.location || data.venue || data.city || data.address || 'Location to be announced'
+    }
+
+    const pickHref = (data, id) => {
+      return data.publicUrl || data.link || data.eventUrl || data.ticketUrl || data.shareUrl || `admin.html`
+    }
+
+    const numberValue = (...values) => {
+      for (const value of values) {
+        const num = Number(value)
+        if (Number.isFinite(num)) return num
+      }
+      return 0
+    }
+
+    const tagTone = (category) => {
+      const c = String(category || '').toLowerCase()
+      if (c.includes('community')) return 'color: #2bd4a3; background: rgba(43,212,163,0.1);'
+      if (c.includes('night')) return 'color: #ff6b6b; background: rgba(255,107,107,0.1);'
+      if (c.includes('music')) return 'color: #5da6ff; background: rgba(93,166,255,0.1);'
+      return ''
+    }
+
+    const avatarStyle = (category) => {
+      const c = String(category || '').toLowerCase()
+      if (c.includes('community')) return 'background: linear-gradient(135deg, #2bd4a3, #0a8f6b);'
+      if (c.includes('night')) return 'background: linear-gradient(135deg, #ff6b6b, #d42b2b);'
+      if (c.includes('music')) return 'background: linear-gradient(135deg, #5da6ff, #0055ff);'
+      return ''
+    }
+
+    const renderEvents = (filter = 'all') => {
+      const filtered = filter === 'all'
+        ? allEvents
+        : allEvents.filter(event => String(pickCategory(event.data)).toLowerCase().includes(filter))
+
+      if (!filtered.length) {
+        grid.innerHTML = '<div class="event-cover-placeholder" style="height: 220px; border-radius: 24px;">No events found.</div>'
+        note.textContent = filter === 'all' ? 'No upcoming events available right now' : `No ${filter} events available right now`
+        return
+      }
+
+      note.textContent = `Showing ${filtered.length} upcoming ${filter === 'all' ? 'events' : filter + ' events'}`
+
+      grid.innerHTML = filtered.map(({ id, data }) => {
+        const title = data.title || data.name || id
+        const category = pickCategory(data)
+        const location = pickLocation(data)
+        const starts = formatEventDate(data.startDate || data.date || data.createdAt)
+        const subtitle = pickSubtitle(data)
+        const image = findImage(data)
+        const comments = numberValue(data.commentsCount, data.commentCount, data.chatCount)
+        const attendees = numberValue(data.attendeesCount, data.goingCount, data.rsvpCount, data.salesCount, data.purchasesCount)
+        const views = numberValue(data.viewsCount, data.impressionsCount, data.reachCount)
+        const href = pickHref(data, id)
+        const host = pickHost(data)
+        const tagStyle = tagTone(category)
+        const hostStyle = avatarStyle(category)
+
+        return `
+          <article class="event-card reveal is-visible">
+            <div class="event-cover">
+              ${image
+                ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;">`
+                : '<div class="event-cover-placeholder">Event Cover</div>'}
+            </div>
+            <div class="event-body">
+              <div class="event-badges">
+                <span class="badge">Ticket</span>
+              </div>
+              <div class="event-title-group">
+                <h2 class="event-title">${escapeHtml(title)}</h2>
+                <p class="event-subtitle">${escapeHtml(subtitle)}</p>
+              </div>
+              <div class="event-info-grid">
+                <div class="info-block">
+                  <span class="info-label">Start Date & Time</span>
+                  <span class="info-value">${escapeHtml(starts)}</span>
+                </div>
+                <div class="info-block">
+                  <span class="info-label">Event Location</span>
+                  <span class="info-value">${escapeHtml(location)}</span>
+                </div>
+              </div>
+              <div class="event-action-bar">
+                <div class="action-stats">
+                  <div class="stat-item">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    ${comments}
+                  </div>
+                  <div class="stat-item">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    ${attendees}
+                  </div>
+                  <div class="stat-item">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    ${views}
+                  </div>
+                </div>
+                <a href="${escapeHtml(href)}" class="cta small">View</a>
+              </div>
+              <div class="event-footer">
+                <div class="host-info">
+                  <div class="host-avatar" style="${hostStyle}"></div>
+                  <div class="host-text">
+                    <span class="host-name">By ${escapeHtml(host)}</span>
+                    <span class="host-type">${escapeHtml(category)} Event</span>
+                  </div>
+                </div>
+                <span class="event-tag" style="${tagStyle}">${escapeHtml(category)}</span>
+              </div>
+            </div>
+          </article>
+        `
+      }).join('')
+    }
+
+    const loadEvents = async () => {
+      try {
+        const now = new Date().toISOString()
+        let snap
+        try {
+          snap = await getDocs(query(collection(db, 'events'), where('startDate', '>=', now), orderBy('startDate'), limit(24)))
+        } catch {
+          try {
+            snap = await getDocs(query(collection(db, 'events'), orderBy('createdAt', 'desc'), limit(24)))
+          } catch {
+            snap = await getDocs(query(collection(db, 'events'), limit(24)))
+          }
+        }
+
+        allEvents = snap.docs
+          .map(doc => ({ id: doc.id, data: doc.data() || {} }))
+          .filter(event => {
+            const starts = toDate(event.data.startDate || event.data.date)
+            return !starts || starts.getTime() >= Date.now() - 86400000
+          })
+
+        renderEvents('all')
+      } catch (error) {
+        console.error('Unable to load events:', error)
+        grid.innerHTML = '<div class="event-cover-placeholder" style="height: 220px; border-radius: 24px;">Unable to load events right now.</div>'
+        note.textContent = 'Unable to load live events right now'
+      }
+    }
+
+    pills.forEach(button => {
+      button.addEventListener('click', () => {
+        pills.forEach(pill => pill.classList.remove('is-active'))
+        button.classList.add('is-active')
+        renderEvents(button.dataset.filter || 'all')
+      })
+    })
+
+    loadEvents()
+  </script>
+</body>
+</html>

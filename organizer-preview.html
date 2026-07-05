@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hubpas Waitlist</title>
+  <meta name="description" content="Join the Hubpas waitlist for early access to event discovery, community, ticketing, and wallet features.">
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body id="top">
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="Hubpas home">
+        <span class="brand-word">hubpas</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <button class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+        <ul class="nav-list">
+          <li><a href="#top" aria-current="page">Home</a></li>
+        </ul>
+        <a class="cta small" href="#organizer-form">Join Waitlist</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="organizer-page">
+    <section class="organizer-intake" id="organizer-form">
+      <div class="container organizer-intake-wrap">
+        <div class="organizer-onboarding-card">
+          <div class="organizer-onboarding-copy">
+            <span class="eyebrow">Hubpas Early Access</span>
+            <h1 class="hubpasTitle">hubpas</h1>
+            <p class="hero-kicker">The only pass you need.</p>
+            <p class="subhead">Something new is coming for the people who move culture, gather crowds, and always want to be where the energy is first.</p>
+          </div>
+
+          <div class="organizer-form-pane">
+            <span class="eyebrow">Private Waitlist</span>
+            <h2>A few quick picks and you are in line.</h2>
+            <form id="organizer-preview-form" class="site-form compact-form">
+              <div class="site-field-grid">
+                <label class="site-field">
+                  <span class="label">Full name</span>
+                  <input class="site-input" type="text" name="fullName" placeholder="Abdul Sankoh" required>
+                </label>
+                <label class="site-field">
+                  <span class="label">Email</span>
+                  <input class="site-input" type="email" name="email" placeholder="you@example.com" required>
+                </label>
+                <label class="site-field">
+                  <span class="label">Phone number</span>
+                  <input class="site-input" type="tel" name="phone" placeholder="+232..." required>
+                </label>
+                <label class="site-field">
+                  <span class="label">Where are you based?</span>
+                  <select class="site-input" name="city" required>
+                    <option value="">Choose your location</option>
+                    <option>Freetown</option>
+                    <option>Bo</option>
+                    <option>Kenema</option>
+                    <option>Makeni</option>
+                    <option>Koidu</option>
+                    <option>Port Loko</option>
+                    <option>Kailahun</option>
+                    <option>Kambia</option>
+                    <option>Kabala</option>
+                    <option>Moyamba</option>
+                    <option>Bonthe</option>
+                    <option>Pujehun</option>
+                    <option>Waterloo</option>
+                    <option>Other in Sierra Leone</option>
+                    <option>Outside Sierra Leone</option>
+                  </select>
+                </label>
+                <label class="site-field">
+                  <span class="label">What kind of moments are you usually chasing?</span>
+                  <select class="site-input" name="audienceType" required>
+                    <option value="">Choose one</option>
+                    <option>Big nights out</option>
+                    <option>Private circles and invites</option>
+                    <option>Creative scenes and live moments</option>
+                    <option>Communities and gatherings</option>
+                    <option>I want in on all of it</option>
+                  </select>
+                </label>
+                <label class="site-field">
+                  <span class="label">What would make you join first?</span>
+                  <select class="site-input" name="interestArea" required>
+                    <option value="">Choose one</option>
+                    <option>Getting access before everyone else</option>
+                    <option>A better way to move through experiences</option>
+                    <option>Being closer to the right people and places</option>
+                    <option>Something that makes going out feel effortless</option>
+                    <option>I want to see what Hubpas unlocks</option>
+                  </select>
+                </label>
+                <label class="site-field">
+                  <span class="label">How early do you want your invite?</span>
+                  <select class="site-input" name="timeline" required>
+                    <option value="">Choose one</option>
+                    <option>The moment it drops</option>
+                    <option>As soon as invites start rolling out</option>
+                    <option>Soon, if it feels worth it</option>
+                    <option>I just want to stay close</option>
+                  </select>
+                </label>
+                <label class="site-field">
+                  <span class="label">When the moment is right, how should paying feel?</span>
+                  <select class="site-input" name="paymentsFeeling" required>
+                    <option value="">Choose one</option>
+                    <option>So smooth I barely notice it</option>
+                    <option>Fast, clean, and one step away</option>
+                    <option>Secure enough to trust instantly</option>
+                    <option>Like part of the whole experience</option>
+                    <option>I want to be surprised in a good way</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="site-form-actions">
+                <button class="cta" type="submit">Join Waitlist</button>
+                <div class="site-form-note" id="organizer-form-message" aria-live="polite"></div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="waitlist-countdown" id="countdown" data-launch-date="2026-08-15T00:00:00Z">
+      <div class="container">
+        <div class="countdown-shell">
+          <div class="countdown-copy">
+            <span class="eyebrow">Countdown</span>
+            <h2>We are preparing for the Hubpas release.</h2>
+            <p class="organizer-copy">Join the waitlist now and stay close while the first release gets ready to open.</p>
+          </div>
+          <div class="countdown-grid" aria-live="polite">
+            <div class="countdown-card">
+              <span class="countdown-value" id="countdown-days">00</span>
+              <span class="countdown-label">Days</span>
+            </div>
+            <div class="countdown-card">
+              <span class="countdown-value" id="countdown-hours">00</span>
+              <span class="countdown-label">Hours</span>
+            </div>
+            <div class="countdown-card">
+              <span class="countdown-value" id="countdown-minutes">00</span>
+              <span class="countdown-label">Minutes</span>
+            </div>
+            <div class="countdown-card">
+              <span class="countdown-value" id="countdown-seconds">00</span>
+              <span class="countdown-label">Seconds</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-grid">
+      <div class="foot-brand">
+        <span class="brand-word">hubpas</span>
+      </div>
+      <div class="foot-links">
+        <a href="#top">Home</a>
+        <a href="#organizer-form">Waitlist</a>
+        <a href="#countdown">Countdown</a>
+      </div>
+      <div class="foot-note">© <span id="year"></span> Hubpas. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile">
+    <div class="mobile-inner">
+      <a href="#top" aria-current="page">Home</a>
+      <a class="cta small" href="#organizer-form">Join Waitlist</a>
+    </div>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>

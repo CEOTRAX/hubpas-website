@@ -1,0 +1,2722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hubpas Admin</title>
+  <meta name="description" content="Hubpas admin portal">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-js-package@1.0.4/qrcode.min.js"></script>
+</head>
+<body class="admin-body">
+  <header class="site-header" role="banner">
+    <div class="admin-container header-inner">
+      <a class="brand" href="index.html" aria-label="Hubpas home">
+        <span class="brand-word">hubpas</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <button class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+        <ul class="nav-list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="events.html">Events</a></li>
+          <li><a href="admin.html" aria-current="page">Admin</a></li>
+        </ul>
+        <button class="cta small" id="signout-btn" type="button" style="display:none">Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <section class="admin-shell">
+      <div class="admin-container">
+        <div class="admin-layout">
+          <aside class="admin-side" aria-label="Admin navigation" style="display:none" id="admin-side">
+            <div class="admin-side-head">
+              <div class="admin-side-title">Hubpas Admin</div>
+              <div class="admin-side-sub" id="admin-email"></div>
+            </div>
+            <nav class="admin-nav">
+              <button type="button" class="admin-nav-item is-active" data-view="overview">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 13h7v7H4z"/></svg></span>
+                <span class="nav-text">Overview</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="events">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16M6 11h4M6 15h4M14 11h4M14 15h4"/><path d="M6 5h12a2 2 0 0 1 2 2v14H4V7a2 2 0 0 1 2-2z"/></svg></span>
+                <span class="nav-text">Events</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="users">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0a4 4 0 0 0 8 0Z"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+                <span class="nav-text">Users</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="wallets">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v10H3z"/><path d="M3 10h18M7 14h4"/></svg></span>
+                <span class="nav-text">Wallets</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="purchases">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 7v14"/></svg></span>
+                <span class="nav-text">Tickets & Sales</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="vouchers">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 13l-7 7-10-10V4h6z"/><path d="M7.5 7.5h.01"/></svg></span>
+                <span class="nav-text">Vouchers</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="moderation">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v6c0 5-3.5 9-8 10c-4.5-1-8-5-8-10V7z"/><path d="M9 12l2 2l4-5"/></svg></span>
+                <span class="nav-text">Moderation</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="sponsors">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 12l2 2a3 3 0 0 0 4 0l1-1a3 3 0 0 1 4 0l2 2"/><path d="M2 12l3-3l4 4M22 12l-3-3l-4 4"/></svg></span>
+                <span class="nav-text">Sponsors</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="boosts">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4l6 6-6 6-4-4z"/><path d="M5 19l3-3"/><path d="M4 14l6-6"/></svg></span>
+                <span class="nav-text">Boosts</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="chats">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H7l-3 3z"/><path d="M8 10h8M8 13h5"/></svg></span>
+                <span class="nav-text">Chats</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="revenue">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V9M12 16V5M17 16v-7"/></svg></span>
+                <span class="nav-text">Revenue</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="audit">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h10v16H6V6a2 2 0 0 1 2-2z"/><path d="M8 8h8M8 12h8M8 16h6"/></svg></span>
+                <span class="nav-text">Audit Log</span>
+              </button>
+              <button type="button" class="admin-nav-item" data-view="settings">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z"/><path d="M19.4 15a7.8 7.8 0 0 0 .1-1l2-1.2-2-3.4-2.3.5a8.6 8.6 0 0 0-.8-.6L16 7l-4-1-1.2 2a8.6 8.6 0 0 0-1 0L8.6 6L4.6 7l.3 2.3a8.6 8.6 0 0 0-.6.8L2 12.8l2 1.2a7.8 7.8 0 0 0 .1 1L2 16.2l2.4 3.4l2.3-.5c.25.22.52.42.8.6L8 22l4 1l1.2-2a8.6 8.6 0 0 0 1 0L15.4 23l4-1l-.3-2.3c.22-.25.42-.52.6-.8l2.3.5l2.4-3.4z"/></svg></span>
+                <span class="nav-text">Settings</span>
+              </button>
+            </nav>
+          </aside>
+
+          <section class="admin-main">
+            <div class="admin-card" id="auth-card">
+              <h1 class="admin-title">Admin login</h1>
+              <p class="admin-sub">Sign in with your admin email and password.</p>
+              <form class="admin-form" id="login-form">
+                <label class="field">
+                  <span class="label">Email</span>
+                  <input class="input" id="email" type="email" autocomplete="email" required>
+                </label>
+                <label class="field">
+                  <span class="label">Password</span>
+                  <input class="input" id="password" type="password" autocomplete="current-password" required>
+                </label>
+                <button class="cta" type="submit" id="login-btn">Sign in</button>
+                <div class="admin-error" id="login-error" role="alert" aria-live="polite"></div>
+              </form>
+            </div>
+
+            <div id="app" style="display:none">
+              <div class="admin-top">
+                <div class="admin-top-left">
+                  <h1 class="admin-h1" id="view-title">Overview</h1>
+                  <div class="admin-muted" id="view-sub">High-level insights across your platform.</div>
+                </div>
+              </div>
+
+              <section class="admin-view" id="view-overview">
+                <div class="dashboard-header">
+                  <h2 class="dashboard-title">Platform Overview</h2>
+                  <p class="dashboard-subtitle">Real-time insights and performance metrics</p>
+                </div>
+
+                <div class="metrics-grid">
+                  <div class="metric-card">
+                    <div class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0a4 4 0 0 0 8 0Z"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+                    <div class="metric-content">
+                      <div class="metric-value" id="m-users">—</div>
+                      <div class="metric-label">Total Users</div>
+                      <div class="metric-change positive">+12% this week</div>
+                    </div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 8h16"/><path d="M6 5h12a2 2 0 0 1 2 2v14H4V7a2 2 0 0 1 2-2z"/></svg></div>
+                    <div class="metric-content">
+                      <div class="metric-value" id="m-events">—</div>
+                      <div class="metric-label">Active Events</div>
+                      <div class="metric-change positive">+5 this week</div>
+                    </div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 7h15l-2 8H7z"/><path d="M6 7l-2-3H2"/><path d="M9 19a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3ZM18 19a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3Z"/></svg></div>
+                    <div class="metric-content">
+                      <div class="metric-value" id="m-purchases">—</div>
+                      <div class="metric-label">Total Purchases</div>
+                      <div class="metric-change positive">+23% this month</div>
+                    </div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V9M12 16V5M17 16v-7"/></svg></div>
+                    <div class="metric-content">
+                      <div class="metric-value" id="m-gross">—</div>
+                      <div class="metric-label">Gross Revenue</div>
+                      <div class="metric-change positive">+18% this month</div>
+                    </div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V9M12 16V7M17 16v-4"/></svg></div>
+                    <div class="metric-content">
+                      <div class="metric-value" id="m-commission">—</div>
+                      <div class="metric-label">Platform Commission</div>
+                      <div class="metric-change positive">+15% this month</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="dashboard-grid">
+                  <div class="dashboard-card">
+                    <div class="card-header">
+                      <div class="card-title">Revenue Trend</div>
+                      <div class="card-subtitle">Last 14 days performance</div>
+                    </div>
+                    <div class="card-body">
+                      <div class="spark-wrap" id="spark-wrap">
+                        <canvas id="revenueChart" width="400" height="200"></canvas>
+                      </div>
+                      <div class="trend-summary">
+                        <div class="trend-item">
+                          <span class="trend-label">This Week</span>
+                          <span class="trend-value positive">+$2,450</span>
+                        </div>
+                        <div class="trend-item">
+                          <span class="trend-label">Last Week</span>
+                          <span class="trend-value">+$1,890</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dashboard-card">
+                    <div class="card-header">
+                      <div class="card-title">User Growth</div>
+                      <div class="card-subtitle">New user registrations</div>
+                    </div>
+                    <div class="card-body">
+                      <div class="spark-wrap" id="user-growth-wrap">
+                        <canvas id="userGrowthChart" width="400" height="200"></canvas>
+                      </div>
+                      <div class="trend-summary">
+                        <div class="trend-item">
+                          <span class="trend-label">This Month</span>
+                          <span class="trend-value positive">+156 users</span>
+                        </div>
+                        <div class="trend-item">
+                          <span class="trend-label">Growth Rate</span>
+                          <span class="trend-value">+12%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dashboard-card">
+                    <div class="card-header">
+                      <div class="card-title">Event Participation</div>
+                      <div class="card-subtitle">Event attendance trends</div>
+                    </div>
+                    <div class="card-body">
+                      <div class="spark-wrap" id="event-participation-wrap">
+                        <canvas id="eventParticipationChart" width="400" height="200"></canvas>
+                      </div>
+                      <div class="trend-summary">
+                        <div class="trend-item">
+                          <span class="trend-label">Avg Attendance</span>
+                          <span class="trend-value">247</span>
+                        </div>
+                        <div class="trend-item">
+                          <span class="trend-label">Total Events</span>
+                          <span class="trend-value">18</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dashboard-card">
+                    <div class="card-header">
+                      <div class="card-title">Top Events</div>
+                      <div class="card-subtitle">Best performing events this month</div>
+                    </div>
+                    <div class="card-body">
+                      <div class="top-events-list" id="top-events"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="dashboard-card">
+                  <div class="card-header">
+                    <div class="card-title">Quick Actions</div>
+                    <div class="card-subtitle">Common admin tasks</div>
+                  </div>
+                  <div class="card-body">
+                    <div class="quick-actions">
+                      <button class="action-btn" data-action="create-event">
+                        <span class="action-text">Create Event</span>
+                      </button>
+                      <button class="action-btn" data-action="view-users">
+                        <span class="action-text">Manage Users</span>
+                      </button>
+                      <button class="action-btn" data-action="revenue-report">
+                        <span class="action-text">Revenue Report</span>
+                      </button>
+                      <button class="action-btn" data-action="system-settings">
+                        <span class="action-text">Settings</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="view-table" style="display:none">
+                <div class="table-header">
+                  <h2 class="table-title" id="coll-pill-title">Data Management</h2>
+                  <p class="table-subtitle" id="coll-pill-subtitle">Browse and manage your data</p>
+                </div>
+                
+                <div class="table-toolbar">
+                  <div class="toolbar-left">
+                    <div class="collection-selector">
+                      <label class="field">
+                        <span class="label">Collection</span>
+                        <select class="input" id="collection-select">
+                          <option value="users">Users</option>
+                          <option value="events">Events</option>
+                          <option value="wallets">Wallets</option>
+                          <option value="sponsors">Sponsors</option>
+                          <option value="chats">Chats</option>
+                          <option value="purchases">Purchases</option>
+                          <option value="vouchers">Vouchers</option>
+                          <option value="reports">Reports</option>
+                          <option value="sponsorshipRequests">Sponsorship Requests</option>
+                          <option value="boosts">Boosts</option>
+                          <option value="admin_audit">Audit Log</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div id="events-filter" style="display:none;" class="pill-row">
+                       <button class="pill is-active" data-filter="upcoming">Upcoming</button>
+                       <button class="pill" data-filter="past">Past</button>
+                    </div>
+                    <button class="cta small ghost" type="button" id="refresh-btn">Refresh</button>
+                    <button type="button" class="cta" id="create-btn">+ Create New</button>
+                  </div>
+                  <div class="toolbar-right">
+                    <input class="input small" id="search-input" placeholder="Search...">
+                    <button class="cta small" type="button" id="new-btn">Add New</button>
+                  </div>
+                </div>
+                
+                <div class="table-container">
+                  <div class="loading-state" id="table-loading" style="display:none">
+                    <div class="loading-spinner"></div>
+                    <p>Loading data...</p>
+                  </div>
+                  <div class="table" id="coll-table"></div>
+                </div>
+                
+                <div class="table-footer">
+                  <div class="pagination-info">
+                    <span id="page-info">Showing 0-0 of 0 items</span>
+                  </div>
+                  <div class="pagination-controls">
+                    <button class="cta ghost small" type="button" id="prev-btn" disabled>Previous</button>
+                    <button class="cta ghost small" type="button" id="next-btn" disabled>Next</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="view-detail" style="display:none">
+                <button id="back-to-list" class="cta ghost small" style="margin-bottom: 20px;">&larr; Back to List</button>
+                <div id="detail-content"></div>
+              </section>
+
+              <section class="admin-view" id="view-revenue" style="display:none">
+                <div class="panel">
+                  <div class="panel-head">
+                    <div class="panel-title">Revenue configuration</div>
+                    <div class="panel-sub">Pick where purchases are stored and how commission is calculated.</div>
+                  </div>
+                  <div class="panel-body">
+                    <div class="admin-grid-2">
+                      <label class="field">
+                        <span class="label">Purchases collection</span>
+                        <select class="input" id="purchases-coll">
+                          <option value="purchases">purchases</option>
+                          <option value="transactions">transactions</option>
+                          <option value="orders">orders</option>
+                          <option value="payments">payments</option>
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span class="label">Default commission rate</span>
+                        <input class="input" id="commission-rate" inputmode="decimal" value="0.05">
+                      </label>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="cta" type="button" id="recalc-btn">Recalculate</button>
+                    </div>
+                    <div class="admin-muted">Commission is computed using fields if present (platformFee, commissionAmount). Otherwise it falls back to amount × rate.</div>
+                  </div>
+                </div>
+
+                <div class="panel" style="margin-top:14px">
+                  <div class="panel-head">
+                    <div class="panel-title">Commission overrides</div>
+                    <div class="panel-sub">Apply overrides per event or per organizer.</div>
+                  </div>
+                  <div class="panel-body">
+                    <div class="admin-grid-2">
+                      <label class="field">
+                        <span class="label">Event ID</span>
+                        <input class="input" id="commission-event-id" placeholder="events/{eventId}">
+                      </label>
+                      <label class="field">
+                        <span class="label">Event commission rate</span>
+                        <input class="input" id="commission-event-rate" inputmode="decimal" placeholder="0.10">
+                      </label>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="cta ghost" type="button" id="save-event-commission">Save event override</button>
+                    </div>
+                    <div class="admin-grid-2" style="margin-top:12px">
+                      <label class="field">
+                        <span class="label">Organizer UID</span>
+                        <input class="input" id="commission-org-uid" placeholder="uid">
+                      </label>
+                      <label class="field">
+                        <span class="label">Organizer commission rate</span>
+                        <input class="input" id="commission-org-rate" inputmode="decimal" placeholder="0.05">
+                      </label>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="cta ghost" type="button" id="save-org-commission">Save organizer tier</button>
+                    </div>
+                    <div class="admin-muted">Overrides are stored in Firestore and used for reporting and fee splits.</div>
+                    <div class="admin-error" id="commission-error" role="alert" aria-live="polite"></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="view-vouchers" style="display:none">
+                <div class="panel">
+                  <div class="panel-head">
+                    <div class="panel-title">Vouchers</div>
+                    <div class="panel-sub">Create promo codes, track redemptions, and disable codes.</div>
+                  </div>
+                  <div class="panel-body">
+                    <div class="admin-grid-2">
+                      <label class="field">
+                        <span class="label">Code</span>
+                        <input class="input" id="voucher-code" placeholder="HUBPAS-2026">
+                      </label>
+                      <label class="field">
+                        <span class="label">Amount</span>
+                        <input class="input" id="voucher-amount" inputmode="decimal" placeholder="10">
+                      </label>
+                      <label class="field">
+                        <span class="label">Currency</span>
+                        <input class="input" id="voucher-currency" value="USD" placeholder="USD">
+                      </label>
+                      <label class="field">
+                        <span class="label">Expires (optional)</span>
+                        <input class="input" id="voucher-expires" type="datetime-local">
+                      </label>
+                      <label class="field">
+                        <span class="label">Max redemptions</span>
+                        <input class="input" id="voucher-max" inputmode="numeric" value="1">
+                      </label>
+                      <label class="field">
+                        <span class="label">Active</span>
+                        <select class="input" id="voucher-active">
+                          <option value="true">true</option>
+                          <option value="false">false</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="cta" type="button" id="create-voucher">Create voucher</button>
+                      <button class="cta ghost" type="button" id="disable-voucher">Disable voucher</button>
+                      <button class="cta ghost" type="button" id="open-vouchers-table">Open vouchers table</button>
+                    </div>
+                    <div class="admin-error" id="voucher-error" role="alert" aria-live="polite"></div>
+                    <div class="voucher-qr-wrap" id="voucher-qr-wrap" style="display:none">
+                      <div class="voucher-qr-box" id="voucher-qr" aria-label="Voucher QR code"></div>
+                      <div class="voucher-qr-meta">
+                        <div class="label">Scan code</div>
+                        <div class="voucher-qr-text" id="voucher-qr-text"></div>
+                        <div class="admin-muted">This QR encodes the voucher code.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="view-moderation" style="display:none">
+                <div class="panel">
+                  <div class="panel-head">
+                    <div class="panel-title">Moderation</div>
+                    <div class="panel-sub">Suspend users, unlist events, and manage verification flags.</div>
+                  </div>
+                  <div class="panel-body">
+                    <div class="admin-grid-2">
+                      <label class="field">
+                        <span class="label">User UID</span>
+                        <input class="input" id="mod-user-uid" placeholder="uid">
+                      </label>
+                      <label class="field">
+                        <span class="label">Action</span>
+                        <select class="input" id="mod-user-action">
+                          <option value="verify">Mark verified</option>
+                          <option value="unverify">Remove verified</option>
+                          <option value="suspend">Suspend</option>
+                          <option value="unsuspend">Unsuspend</option>
+                          <option value="blockChat">Block chat</option>
+                          <option value="unblockChat">Unblock chat</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="cta" type="button" id="apply-user-mod">Apply to user</button>
+                    </div>
+
+                    <div class="admin-grid-2" style="margin-top:14px">
+                      <label class="field">
+                        <span class="label">Event ID</span>
+                        <input class="input" id="mod-event-id" placeholder="events/{eventId}">
+                      </label>
+                      <label class="field">
+                        <span class="label">Action</span>
+                        <select class="input" id="mod-event-action">
+                          <option value="approve">Approve</option>
+                          <option value="reject">Reject</option>
+                          <option value="unlist">Unlist / hide</option>
+                          <option value="publish">Publish</option>
+                          <option value="block">Block</option>
+                          <option value="unblock">Unblock</option>
+                          <option value="verifyEvent">Mark verified event</option>
+                          <option value="unverifyEvent">Remove verified event</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="cta" type="button" id="apply-event-mod">Apply to event</button>
+                      <button class="cta ghost" type="button" id="open-reports-table">Open reports table</button>
+                    </div>
+                    <div class="admin-error" id="moderation-error" role="alert" aria-live="polite"></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="admin-view" id="view-settings" style="display:none">
+                <div class="panel">
+                  <div class="panel-head">
+                    <div class="panel-title">Admin access</div>
+                    <div class="panel-sub">This portal only opens for users listed in Firestore.</div>
+                  </div>
+                  <div class="panel-body">
+                    <div class="admin-muted">Add a document at admins/{uid} with active: true for each admin account.</div>
+                    <div class="admin-actions">
+                      <button class="cta ghost" type="button" id="copy-uid-btn">Copy my UID</button>
+                    </div>
+                    <div class="admin-muted" id="uid-text"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="admin-card" id="not-admin" style="display:none">
+              <h1 class="admin-title">Access denied</h1>
+              <p class="admin-sub">Your account is signed in, but it is not allowed to access the admin portal.</p>
+              <div class="admin-muted">Ask an existing admin to grant you access in Firestore.</div>
+              <div class="admin-actions">
+                <button class="cta ghost" type="button" id="copy-uid-btn2">Copy my UID</button>
+              </div>
+              <div class="admin-muted" id="uid-text2"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <div class="modal" id="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Edit document">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-title">Edit</div>
+          <button class="cta ghost small" type="button" data-close="1">Close</button>
+        </div>
+        <div class="modal-body">
+          <div class="admin-muted" id="modal-sub"></div>
+          <label class="field" style="margin-top:10px">
+            <span class="label">Admin note (optional)</span>
+            <input class="input" id="audit-reason" placeholder="Reason for change (stored in audit log)">
+          </label>
+          <div class="form-container" id="form-container">
+            <div class="form-fields" id="form-fields"></div>
+            <div class="form-toggle">
+              <button type="button" class="cta ghost small" id="toggle-json-btn">Switch to JSON Editor</button>
+            </div>
+          </div>
+          <div class="json-container" id="json-container" style="display:none">
+            <textarea class="textarea" id="json" spellcheck="false"></textarea>
+            <div class="form-toggle">
+              <button type="button" class="cta ghost small" id="toggle-form-btn">Switch to Form Editor</button>
+            </div>
+          </div>
+          <div class="admin-error" id="modal-error" role="alert" aria-live="polite"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="cta ghost" type="button" id="delete-btn">Delete</button>
+          <div class="modal-foot-right">
+            <button class="cta ghost" type="button" id="reset-btn">Reset</button>
+            <button class="cta" type="button" id="save-btn">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile">
+    <div class="mobile-inner">
+      <a href="index.html">Home</a>
+      <a href="events.html">Events</a>
+      <a href="admin.html" aria-current="page">Admin</a>
+    </div>
+  </nav>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      setDoc,
+      deleteDoc,
+      query,
+      orderBy,
+      limit,
+      startAfter,
+      getCountFromServer,
+      getAggregateFromServer,
+      sum
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMTs10x-2tnzivvx5PW7d9r3KdfncUKpo",
+      authDomain: "dmap-50136.firebaseapp.com",
+      projectId: "dmap-50136",
+      storageBucket: "dmap-50136.firebasestorage.app",
+      messagingSenderId: "695873306591",
+      appId: "1:695873306591:web:c51485253a7c7d9849ce6a"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    const els = {
+      signoutBtn: document.getElementById('signout-btn'),
+      loginForm: document.getElementById('login-form'),
+      loginBtn: document.getElementById('login-btn'),
+      email: document.getElementById('email'),
+      password: document.getElementById('password'),
+      loginError: document.getElementById('login-error'),
+      authCard: document.getElementById('auth-card'),
+      notAdmin: document.getElementById('not-admin'),
+      app: document.getElementById('app'),
+      side: document.getElementById('admin-side'),
+      adminEmail: document.getElementById('admin-email'),
+      viewTitle: document.getElementById('view-title'),
+      viewSub: document.getElementById('view-sub'),
+      viewOverview: document.getElementById('view-overview'),
+      viewTable: document.getElementById('view-table'),
+      viewRevenue: document.getElementById('view-revenue'),
+      viewVouchers: document.getElementById('view-vouchers'),
+      viewModeration: document.getElementById('view-moderation'),
+      viewSettings: document.getElementById('view-settings'),
+      viewDetail: document.getElementById('view-detail'),
+      detailContent: document.getElementById('detail-content'),
+      backToListBtn: document.getElementById('back-to-list'),
+      eventsFilter: document.getElementById('events-filter'),
+      mUsers: document.getElementById('m-users'),
+      mEvents: document.getElementById('m-events'),
+      mPurchases: document.getElementById('m-purchases'),
+      mGross: document.getElementById('m-gross'),
+      mCommission: document.getElementById('m-commission'),
+      trendSub: document.getElementById('trend-sub'),
+      sparkWrap: document.getElementById('spark-wrap'),
+      topEvents: document.getElementById('top-events'),
+      tableTitle: document.getElementById('coll-pill-title'),
+      tableSubtitle: document.getElementById('coll-pill-subtitle'),
+      collectionSelect: document.getElementById('collection-select'),
+      refreshBtn: document.getElementById('refresh-btn'),
+      searchInput: document.getElementById('search-input'),
+      tableLoading: document.getElementById('table-loading'),
+      collTable: document.getElementById('coll-table'),
+      newBtn: document.getElementById('new-btn'),
+      createBtn: document.getElementById('create-btn'),
+      prevBtn: document.getElementById('prev-btn'),
+      nextBtn: document.getElementById('next-btn'),
+      pageInfo: document.getElementById('page-info'),
+      purchasesColl: document.getElementById('purchases-coll'),
+      commissionRate: document.getElementById('commission-rate'),
+      recalcBtn: document.getElementById('recalc-btn'),
+      commissionEventId: document.getElementById('commission-event-id'),
+      commissionEventRate: document.getElementById('commission-event-rate'),
+      commissionOrgUid: document.getElementById('commission-org-uid'),
+      commissionOrgRate: document.getElementById('commission-org-rate'),
+      saveEventCommissionBtn: document.getElementById('save-event-commission'),
+      saveOrgCommissionBtn: document.getElementById('save-org-commission'),
+      commissionError: document.getElementById('commission-error'),
+      voucherCode: document.getElementById('voucher-code'),
+      voucherAmount: document.getElementById('voucher-amount'),
+      voucherCurrency: document.getElementById('voucher-currency'),
+      voucherExpires: document.getElementById('voucher-expires'),
+      voucherMax: document.getElementById('voucher-max'),
+      voucherActive: document.getElementById('voucher-active'),
+      createVoucherBtn: document.getElementById('create-voucher'),
+      disableVoucherBtn: document.getElementById('disable-voucher'),
+      openVouchersTableBtn: document.getElementById('open-vouchers-table'),
+      voucherError: document.getElementById('voucher-error'),
+      voucherQrWrap: document.getElementById('voucher-qr-wrap'),
+      voucherQr: document.getElementById('voucher-qr'),
+      voucherQrText: document.getElementById('voucher-qr-text'),
+      modUserUid: document.getElementById('mod-user-uid'),
+      modUserAction: document.getElementById('mod-user-action'),
+      applyUserModBtn: document.getElementById('apply-user-mod'),
+      modEventId: document.getElementById('mod-event-id'),
+      modEventAction: document.getElementById('mod-event-action'),
+      applyEventModBtn: document.getElementById('apply-event-mod'),
+      openReportsTableBtn: document.getElementById('open-reports-table'),
+      moderationError: document.getElementById('moderation-error'),
+      copyUidBtn: document.getElementById('copy-uid-btn'),
+      uidText: document.getElementById('uid-text'),
+      copyUidBtn2: document.getElementById('copy-uid-btn2'),
+      uidText2: document.getElementById('uid-text2'),
+      modal: document.getElementById('modal'),
+      modalTitle: document.getElementById('modal-title'),
+      modalSub: document.getElementById('modal-sub'),
+      modalError: document.getElementById('modal-error'),
+      auditReason: document.getElementById('audit-reason'),
+      json: document.getElementById('json'),
+      saveBtn: document.getElementById('save-btn'),
+      deleteBtn: document.getElementById('delete-btn'),
+      resetBtn: document.getElementById('reset-btn'),
+      formContainer: document.getElementById('form-container'),
+      jsonContainer: document.getElementById('json-container'),
+      formFields: document.getElementById('form-fields'),
+      toggleJsonBtn: document.getElementById('toggle-json-btn'),
+      toggleFormBtn: document.getElementById('toggle-form-btn')
+    }
+
+    const VIEWS = {
+      overview: { title: 'Overview', sub: 'High-level insights across your platform.' },
+      events: { title: 'Events', sub: 'Browse and edit event documents.' },
+      users: { title: 'Users', sub: 'Browse and edit user profile documents (Firestore users collection).' },
+      wallets: { title: 'Wallets', sub: 'Browse and edit wallet documents and balances.' },
+      purchases: { title: 'Tickets & Sales', sub: 'Monitor purchases, refunds, and ticket activity.' },
+      vouchers: { title: 'Vouchers', sub: 'Create promo codes and track redemptions.' },
+      moderation: { title: 'Moderation', sub: 'Approve, block, verify, and manage safety actions.' },
+      audit: { title: 'Audit Log', sub: 'Review all admin actions taken across the platform.' },
+      sponsors: { title: 'Sponsors', sub: 'Browse sponsor records and placements.' },
+      sponsorshipRequests: { title: 'Sponsorship Requests', sub: 'Approve and manage sponsorship requests and placements.' },
+      boosts: { title: 'Boosts', sub: 'Monitor boosted events, spend, and campaign status.' },
+      chats: { title: 'Chats', sub: 'Browse chat threads and messages (Firestore).' },
+      revenue: { title: 'Revenue', sub: 'Track gross revenue and commission performance.' },
+      settings: { title: 'Settings', sub: 'Admin access and configuration.' }
+    }
+
+    const COLLECTIONS = {
+      events: 'events',
+      users: 'users',
+      wallets: 'wallets',
+      purchases: 'purchases',
+      vouchers: 'vouchers',
+      reports: 'reports',
+      sponsorshipRequests: 'sponsorshipRequests',
+      boosts: 'boosts',
+      audit: 'admin_audit',
+      admin_audit: 'admin_audit',
+      sponsors: 'sponsors',
+      chats: 'chats'
+    }
+
+    let currentUser = null
+    let currentView = 'overview'
+    let currentCollectionKey = 'events'
+    let lastDoc = null
+    let firstDocStack = []
+    let lastLoadedRows = []
+    let editing = null
+    let purchasesCollectionName = localStorage.getItem('hubpas_admin_purchasesColl') || 'purchases'
+    let commissionRate = Number(localStorage.getItem('hubpas_admin_commissionRate') || '0.05')
+
+    els.purchasesColl.value = purchasesCollectionName
+    els.commissionRate.value = String(commissionRate)
+
+    const money = (n) => {
+      if (typeof n !== 'number' || !isFinite(n)) return '—'
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n)
+    }
+
+    const num = (n) => {
+      if (typeof n !== 'number' || !isFinite(n)) return '—'
+      return new Intl.NumberFormat(undefined).format(n)
+    }
+
+    const show = (el) => { if (el) el.style.display = '' }
+    const hide = (el) => { if (el) el.style.display = 'none' }
+    const setText = (el, value) => { if (el) el.textContent = value }
+    const resolveCollectionName = (key) => {
+      if (key === 'purchases') return purchasesCollectionName
+      return COLLECTIONS[key] || key
+    }
+
+    const logAdminAction = async ({ action, targetCollection, targetDocId, note, payload }) => {
+      try {
+        const ref = doc(collection(db, 'admin_audit'))
+        await setDoc(ref, {
+          action: action || 'unknown',
+          targetCollection: targetCollection || null,
+          targetDocId: targetDocId || null,
+          note: note || null,
+          payload: payload || null,
+          adminUid: currentUser ? currentUser.uid : null,
+          adminEmail: currentUser ? (currentUser.email || null) : null,
+          createdAt: new Date().toISOString()
+        })
+      } catch (err) {
+        console.warn('Audit log write failed:', err)
+      }
+    }
+
+    const setView = (view) => {
+      currentView = view
+      const meta = VIEWS[view] || VIEWS.overview
+      setText(els.viewTitle, meta.title)
+      setText(els.viewSub, meta.sub)
+
+      const viewNodes = [els.viewOverview, els.viewTable, els.viewRevenue, els.viewVouchers, els.viewModeration, els.viewSettings, els.viewDetail]
+      viewNodes.forEach(hide)
+
+      if (view === 'overview') show(els.viewOverview)
+      else if (view === 'revenue') show(els.viewRevenue)
+      else if (view === 'vouchers') show(els.viewVouchers)
+      else if (view === 'moderation') show(els.viewModeration)
+      else if (view === 'settings') show(els.viewSettings)
+      else {
+        currentCollectionKey = view === 'audit' ? 'admin_audit' : view
+        show(els.viewTable)
+        const filterEl = document.getElementById('events-filter')
+        if (filterEl) filterEl.style.display = (currentCollectionKey === 'events') ? 'flex' : 'none'
+        setText(els.tableTitle, meta.title)
+        setText(els.tableSubtitle, meta.sub)
+        if (els.collectionSelect) els.collectionSelect.value = currentCollectionKey
+        resetPaging()
+        loadCollectionPage()
+      }
+
+      document.querySelectorAll('.admin-nav-item').forEach(btn => {
+        btn.classList.toggle('is-active', btn.dataset.view === view)
+      })
+    }
+
+    const setCollection = (name) => {
+      const cleaned = (name || '').trim()
+      if (!cleaned) return
+      currentView = 'data'
+      currentCollectionKey = cleaned
+      const meta = VIEWS[cleaned] || { title: 'Data', sub: `Browsing ${cleaned}` }
+      setText(els.viewTitle, meta.title)
+      setText(els.viewSub, meta.sub)
+      hide(els.viewOverview)
+      hide(els.viewRevenue)
+      hide(els.viewVouchers)
+      hide(els.viewModeration)
+      hide(els.viewSettings)
+      hide(els.viewDetail)
+      show(els.viewTable)
+      const filterEl = document.getElementById('events-filter')
+      if (filterEl) filterEl.style.display = (currentCollectionKey === 'events') ? 'flex' : 'none'
+      setText(els.tableTitle, meta.title)
+      setText(els.tableSubtitle, meta.sub)
+      if (els.collectionSelect) els.collectionSelect.value = cleaned
+      document.querySelectorAll('.admin-nav-item').forEach(btn => btn.classList.remove('is-active'))
+      resetPaging()
+      loadCollectionPage()
+    }
+
+    const friendlyFirebaseError = (err) => {
+      const msg = (err && err.message ? String(err.message) : '').replace('Firebase: ', '')
+      if (!msg) return 'Unexpected error'
+      return msg
+    }
+
+    const isAdmin = async (uid) => {
+      try {
+        const ref = doc(db, 'admins', uid)
+        const snap = await getDoc(ref)
+        if (!snap.exists()) return false
+        const data = snap.data() || {}
+        if (data.active === false) return false
+        return true
+      } catch (err) {
+        const msg = friendlyFirebaseError(err)
+        if (msg.toLowerCase().includes('missing or insufficient permissions')) {
+          throw new Error('Firestore permission denied. Update rules to allow signed-in users to read admins/{uid}.')
+        }
+        throw new Error(msg)
+      }
+    }
+
+    const guardAdmin = async (user) => {
+      const ok = await isAdmin(user.uid)
+      if (!ok) {
+        hide(els.authCard)
+        hide(els.app)
+        hide(els.side)
+        show(els.notAdmin)
+        show(els.signoutBtn)
+        return false
+      }
+      hide(els.notAdmin)
+      show(els.side)
+      show(els.app)
+      show(els.signoutBtn)
+      return true
+    }
+
+    const setAuthFormEnabled = (enabled) => {
+      if (els.email) els.email.disabled = !enabled
+      if (els.password) els.password.disabled = !enabled
+      if (els.loginBtn) els.loginBtn.disabled = !enabled
+    }
+
+    const resetPaging = () => {
+      lastDoc = null
+      firstDocStack = []
+      lastLoadedRows = []
+      els.prevBtn.disabled = true
+      els.nextBtn.disabled = true
+      setText(els.pageInfo, '')
+    }
+
+    const safeJson = (value) => {
+      const seen = new WeakSet()
+      return JSON.stringify(value, (k, v) => {
+        if (typeof v === 'object' && v !== null) {
+          if (seen.has(v)) return undefined
+          seen.add(v)
+        }
+        if (v && typeof v === 'object' && typeof v.toDate === 'function') return v.toDate().toISOString()
+        return v
+      }, 2)
+    }
+
+    const parseJson = (text) => {
+      const obj = JSON.parse(text)
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) return obj
+      throw new Error('JSON must be an object')
+    }
+
+    const escapeHtml = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;')
+
+    const formatDateValue = (value) => {
+      if (!value) return 'Not set'
+      const date = value && typeof value.toDate === 'function' ? value.toDate() : new Date(value)
+      if (Number.isNaN(date.getTime())) return String(value)
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+
+    const formatInlineValue = (value) => {
+      if (value === null || value === undefined || value === '') return '—'
+      if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '—'
+      if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+      if (value && typeof value.toDate === 'function') return formatDateValue(value)
+      if (typeof value === 'object') {
+        try {
+          return JSON.stringify(value)
+        } catch {
+          return '[Object]'
+        }
+      }
+      return String(value)
+    }
+
+    const detectStatusTone = (value) => {
+      const s = String(value || '').toLowerCase()
+      if (!s) return ''
+      if (['active', 'approved', 'published', 'paid', 'verified', 'success', 'complete', 'completed'].includes(s)) return 'good'
+      if (['pending', 'draft', 'queued', 'processing'].includes(s)) return 'warn'
+      if (['blocked', 'suspended', 'rejected', 'failed', 'disabled', 'inactive', 'cancelled', 'hidden'].includes(s)) return 'bad'
+      return ''
+    }
+
+    const buildBadges = (row, data, key) => {
+      const badges = []
+      if (key === 'users') {
+        if (data.accountType) badges.push({ text: data.accountType, tone: '' })
+        if (data.verified) badges.push({ text: 'Verified', tone: 'good' })
+        if (data.status) badges.push({ text: data.status, tone: detectStatusTone(data.status) })
+        if (data.chatBlocked) badges.push({ text: 'Chat blocked', tone: 'bad' })
+      } else if (key === 'events') {
+        if (data.status) badges.push({ text: data.status, tone: detectStatusTone(data.status) })
+        if (data.category) badges.push({ text: data.category, tone: '' })
+        if (data.verifiedEvent) badges.push({ text: 'Verified', tone: 'good' })
+        if (data.listed === false) badges.push({ text: 'Hidden', tone: 'warn' })
+        if (data.blocked) badges.push({ text: 'Blocked', tone: 'bad' })
+      } else if (key === 'purchases') {
+        if (data.status) badges.push({ text: data.status, tone: detectStatusTone(data.status) })
+        if (data.refunded) badges.push({ text: 'Refunded', tone: 'warn' })
+      } else if (key === 'wallets') {
+        if (data.currency) badges.push({ text: data.currency, tone: '' })
+        if (data.status) badges.push({ text: data.status, tone: detectStatusTone(data.status) })
+      } else if (key === 'vouchers') {
+        badges.push({ text: data.active === false ? 'Inactive' : 'Active', tone: data.active === false ? 'bad' : 'good' })
+      } else if (key === 'admin_audit') {
+        if (data.action) badges.push({ text: data.action, tone: '' })
+      } else {
+        if (data.status) badges.push({ text: data.status, tone: detectStatusTone(data.status) })
+      }
+      return badges
+    }
+
+    const getRecordMeta = (row, key) => {
+      const data = row.data || {}
+      if (key === 'users') {
+        return {
+          title: data.displayName || data.name || data.username || data.email || row.id,
+          subtitle: data.email || data.phone || row.id,
+          items: [
+            ['Username', data.username],
+            ['Phone', data.phone],
+            ['Wallet', data.walletBalance ?? data.balance],
+            ['Joined', data.createdAt]
+          ]
+        }
+      }
+      if (key === 'events') {
+        return {
+          title: data.title || data.name || row.id,
+          subtitle: data.location || data.venue || data.city || row.id,
+          items: [
+            ['Starts', data.startDate || data.date || data.createdAt],
+            ['Organizer', data.organizerId || data.hostId || data.ownerId],
+            ['Price', data.price ?? data.amount ?? data.ticketPrice],
+            ['Sales', data.salesCount ?? data.purchasesCount]
+          ]
+        }
+      }
+      if (key === 'purchases') {
+        return {
+          title: data.eventTitle || data.eventName || data.eventId || row.id,
+          subtitle: data.userEmail || data.userId || data.buyerUid || row.id,
+          items: [
+            ['Amount', money(toAmount(data))],
+            ['Commission', money(toCommission(data))],
+            ['Created', data.createdAt],
+            ['Reference', data.reference || data.orderId || data.ticketId]
+          ]
+        }
+      }
+      if (key === 'wallets') {
+        return {
+          title: data.ownerName || data.userId || row.id,
+          subtitle: data.currency || 'Wallet',
+          items: [
+            ['Balance', data.balance ?? data.availableBalance],
+            ['Locked', data.lockedBalance ?? data.pendingBalance],
+            ['Owner', data.userId || data.uid],
+            ['Updated', data.updatedAt || data.createdAt]
+          ]
+        }
+      }
+      if (key === 'vouchers') {
+        return {
+          title: data.code || row.id,
+          subtitle: `${data.currency || 'USD'} ${formatInlineValue(data.amount)}`,
+          items: [
+            ['Redeemed', `${formatInlineValue(data.redeemedCount)} / ${formatInlineValue(data.maxRedemptions)}`],
+            ['Expires', data.expiresAt],
+            ['Created', data.createdAt],
+            ['Created by', data.createdBy]
+          ]
+        }
+      }
+      if (key === 'admin_audit') {
+        return {
+          title: data.action || row.id,
+          subtitle: data.adminEmail || data.adminUid || 'Admin action',
+          items: [
+            ['Collection', data.targetCollection],
+            ['Document', data.targetDocId],
+            ['When', data.createdAt],
+            ['Note', data.note]
+          ]
+        }
+      }
+      return {
+        title: row.id,
+        subtitle: data.name || data.title || data.email || data.status || 'Record',
+        items: Object.entries(data).slice(0, 4).map(([label, value]) => [label, value])
+      }
+    }
+
+    const openDetailView = async (collectionKey, docId, data) => {
+      currentView = 'detail'
+      hide(els.viewTable)
+      show(els.viewDetail)
+      const meta = getRecordMeta({ id: docId, data }, collectionKey)
+      const badges = buildBadges({ id: docId, data }, data, collectionKey)
+      let contentHtml = `
+        <div class="detail-header">
+          <h2 class="detail-title">${escapeHtml(meta.title)}</h2>
+          <div class="detail-badges">
+            ${badges.map(b => `<span class="record-badge ${b.tone ? `is-${b.tone}` : ''}">${escapeHtml(b.text)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="detail-grid">
+      `
+
+      if (collectionKey === 'events') {
+        let revenue = 0
+        try {
+          const q = query(collection(db, purchasesCollectionName), where('eventId', '==', docId))
+          const snap = await getDocs(q)
+          revenue = snap.docs.reduce((acc, d) => acc + toAmount(d.data()), 0)
+        } catch(e) {}
+        
+        contentHtml += `
+          <div class="detail-card">
+            <h3>Event Info</h3>
+            <div class="record-meta">
+              <div class="record-meta-item"><span class="record-meta-label">Location</span><span class="record-meta-value">${escapeHtml(data.location || data.venue || 'TBA')}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Date</span><span class="record-meta-value">${escapeHtml(formatDateValue(data.startDate || data.date || data.createdAt))}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Revenue</span><span class="record-meta-value">${money(revenue)}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Organizer ID</span><span class="record-meta-value">${escapeHtml(data.organizerId || data.hostId || '—')}</span></div>
+            </div>
+            <div class="map-placeholder">Map / Location View</div>
+          </div>
+          <div class="detail-card">
+            <h3>Sponsors & Actions</h3>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:12px;">Manage sponsorships or block this event.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="cta ghost small" onclick="document.getElementById('mod-event-id').value='${escapeHtml(docId)}'; setView('moderation');">Block / Moderate</button>
+              <button class="cta small" onclick="document.querySelector('[data-edit=\\'${escapeHtml(docId)}\\']')?.click()">Edit JSON</button>
+            </div>
+          </div>
+        `
+      } else if (collectionKey === 'users') {
+        let walletBal = data.walletBalance ?? data.balance ?? 0
+        try {
+          const wSnap = await getDoc(doc(db, 'wallets', docId))
+          if (wSnap.exists()) walletBal = wSnap.data().balance ?? walletBal
+        } catch(e) {}
+
+        contentHtml += `
+          <div class="detail-card">
+            <h3>Profile & Wallet</h3>
+            <div class="record-meta">
+              <div class="record-meta-item"><span class="record-meta-label">Email</span><span class="record-meta-value">${escapeHtml(data.email || '—')}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Phone</span><span class="record-meta-value">${escapeHtml(data.phone || '—')}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Wallet Balance</span><span class="record-meta-value">${money(walletBal)}</span></div>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h3>Admin Actions</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="cta ghost small" onclick="document.getElementById('mod-user-uid').value='${escapeHtml(docId)}'; setView('moderation');">Moderate User</button>
+              <button class="cta small" onclick="document.querySelector('[data-edit=\\'${escapeHtml(docId)}\\']')?.click()">Edit JSON</button>
+            </div>
+          </div>
+        `
+      } else if (collectionKey === 'purchases') {
+        contentHtml += `
+          <div class="detail-card">
+            <h3>Purchase Details</h3>
+            <div class="record-meta">
+              <div class="record-meta-item"><span class="record-meta-label">Amount</span><span class="record-meta-value">${money(toAmount(data))}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Commission</span><span class="record-meta-value">${money(toCommission(data))}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Event ID</span><span class="record-meta-value">${escapeHtml(data.eventId || '—')}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Buyer ID</span><span class="record-meta-value">${escapeHtml(data.userId || data.buyerUid || '—')}</span></div>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h3>Admin Actions</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="cta small" onclick="document.querySelector('[data-edit=\\'${escapeHtml(docId)}\\']')?.click()">Edit JSON</button>
+            </div>
+          </div>
+        `
+      } else if (collectionKey === 'wallets') {
+        contentHtml += `
+          <div class="detail-card">
+            <h3>Wallet Info</h3>
+            <div class="record-meta">
+              <div class="record-meta-item"><span class="record-meta-label">Balance</span><span class="record-meta-value">${escapeHtml(data.balance ?? data.availableBalance ?? 0)}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Locked</span><span class="record-meta-value">${escapeHtml(data.lockedBalance ?? data.pendingBalance ?? 0)}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Currency</span><span class="record-meta-value">${escapeHtml(data.currency || 'USD')}</span></div>
+              <div class="record-meta-item"><span class="record-meta-label">Owner ID</span><span class="record-meta-value">${escapeHtml(data.userId || data.uid || docId)}</span></div>
+            </div>
+          </div>
+          <div class="detail-card">
+            <h3>Admin Actions</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="cta small" onclick="document.querySelector('[data-edit=\\'${escapeHtml(docId)}\\']')?.click()">Edit JSON</button>
+            </div>
+          </div>
+        `
+      } else {
+        contentHtml += `
+          <div class="detail-card" style="grid-column: 1 / -1;">
+            <h3>Document Data</h3>
+            <pre class="mono small" style="white-space:pre-wrap; background:rgba(0,0,0,0.2); padding:16px; border-radius:12px;">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+            <button class="cta small" style="margin-top:16px;" onclick="document.querySelector('[data-edit=\\'${escapeHtml(docId)}\\']')?.click()">Edit JSON</button>
+          </div>
+        `
+      }
+
+      contentHtml += `</div>`
+      els.detailContent.innerHTML = contentHtml
+    }
+
+    const generateFormFields = (data) => {
+      const container = els.formFields
+      container.innerHTML = ''
+      
+      if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+        const emptyMessage = document.createElement('div')
+        emptyMessage.className = 'form-field-group'
+        emptyMessage.innerHTML = '<p class="form-label">No data available. Use "Add New Field" to create fields.</p>'
+        container.appendChild(emptyMessage)
+        return
+      }
+      
+      Object.entries(data).forEach(([key, value]) => {
+        // Skip invalid keys
+        if (!key || typeof key !== 'string' || key.trim().length === 0) {
+          console.warn('Skipping invalid field key:', key)
+          return
+        }
+        
+        const fieldGroup = document.createElement('div')
+        fieldGroup.className = 'form-field-group'
+        
+        const label = document.createElement('label')
+        label.className = 'form-label'
+        label.textContent = key
+        label.htmlFor = 'field-' + key
+        
+        let input
+        try {
+          if (typeof value === 'boolean') {
+            input = document.createElement('input')
+            input.type = 'checkbox'
+            input.id = 'field-' + key
+            input.checked = value
+          } else if (typeof value === 'number') {
+            input = document.createElement('input')
+            input.type = 'number'
+            input.id = 'field-' + key
+            input.value = value
+            input.step = value % 1 === 0 ? '1' : 'any'
+          } else if (key.includes('date') || key.includes('Date') || key.includes('time') || key.includes('Time')) {
+            input = document.createElement('input')
+            input.type = 'datetime-local'
+            input.id = 'field-' + key
+            if (value) {
+              const date = new Date(value)
+              if (!isNaN(date.getTime())) {
+                input.value = date.toISOString().slice(0, 16)
+              }
+            }
+          } else if (typeof value === 'object' && value !== null) {
+            input = document.createElement('textarea')
+            input.id = 'field-' + key
+            input.rows = 3
+            input.value = JSON.stringify(value, null, 2)
+            input.className = 'textarea'
+          } else {
+            input = document.createElement('input')
+            input.type = 'text'
+            input.id = `field-${key}`
+            input.value = value || ''
+          }
+          
+          input.className += ' form-input'
+          input.dataset.field = key
+          
+          fieldGroup.appendChild(label)
+          fieldGroup.appendChild(input)
+          container.appendChild(fieldGroup)
+        } catch (error) {
+          console.error('Error creating field for key "' + key + '":', error)
+          // Create a simple text input as fallback
+          input = document.createElement('input')
+          input.type = 'text'
+          input.id = 'field-' + key
+          input.value = String(value || '')
+          input.className += ' form-input error-field'
+          input.dataset.field = key
+          input.title = 'Error creating field - using fallback'
+          
+          fieldGroup.appendChild(label)
+          fieldGroup.appendChild(input)
+          container.appendChild(fieldGroup)
+        }
+      })
+      
+      // Add field for new properties
+      const addFieldGroup = document.createElement('div')
+      addFieldGroup.className = 'form-field-group'
+      
+      const addLabel = document.createElement('label')
+      addLabel.className = 'form-label'
+      addLabel.textContent = 'Add New Field'
+      
+      const addContainer = document.createElement('div')
+      addContainer.className = 'add-field-container'
+      
+      const keyInput = document.createElement('input')
+      keyInput.type = 'text'
+      keyInput.placeholder = 'Field name'
+      keyInput.className = 'form-input small'
+      
+      const valueInput = document.createElement('input')
+      valueInput.type = 'text'
+      valueInput.placeholder = 'Value'
+      valueInput.className = 'form-input small'
+      
+      const addBtn = document.createElement('button')
+      addBtn.type = 'button'
+      addBtn.textContent = 'Add'
+      addBtn.className = 'cta ghost small'
+      addBtn.onclick = () => {
+        if (keyInput.value.trim()) {
+          const newData = getFormData()
+          newData[keyInput.value.trim()] = valueInput.value.trim() || null
+          generateFormFields(newData)
+        }
+      }
+      
+      addContainer.appendChild(keyInput)
+      addContainer.appendChild(valueInput)
+      addContainer.appendChild(addBtn)
+      
+      addFieldGroup.appendChild(addLabel)
+      addFieldGroup.appendChild(addContainer)
+      container.appendChild(addFieldGroup)
+    }
+    
+    const getFormData = () => {
+      const data = {}
+      els.formFields.querySelectorAll('[data-field]').forEach(input => {
+        const key = input.dataset.field
+        if (input.type === 'checkbox') {
+          data[key] = input.checked
+        } else if (input.type === 'number') {
+          data[key] = parseFloat(input.value) || 0
+        } else if (input.type === 'datetime-local') {
+          data[key] = input.value ? new Date(input.value).toISOString() : null
+        } else if (input.tagName === 'TEXTAREA' && input.value.trim().startsWith('{')) {
+          try {
+            data[key] = JSON.parse(input.value)
+          } catch {
+            data[key] = input.value
+          }
+        } else {
+          data[key] = input.value || null
+        }
+      })
+      return data
+    }
+    
+    const openModal = ({ title, sub, json, canDelete, onSave, onDelete, collectionName, docId }) => {
+      editing = { title, sub, json, onSave, onDelete, originalJson: json, collectionName: collectionName || null, docId: docId || null }
+      setText(els.modalTitle, title)
+      setText(els.modalSub, sub || '')
+      setText(els.modalError, '')
+      if (els.auditReason) els.auditReason.value = ''
+      
+      try {
+        const data = json ? JSON.parse(json) : {}
+        generateFormFields(data)
+        els.json.value = json || '{\n}\n'
+      } catch (err) {
+        els.json.value = json || '{\n}\n'
+      }
+      
+      els.deleteBtn.style.display = canDelete ? '' : 'none'
+      els.modal.classList.add('open')
+      els.modal.setAttribute('aria-hidden', 'false')
+      
+      // Show form view by default
+      show(els.formContainer)
+      hide(els.jsonContainer)
+      
+      setTimeout(() => {
+        const firstInput = els.formFields.querySelector('input, textarea')
+        if (firstInput) firstInput.focus()
+      }, 0)
+    }
+
+    const closeModal = () => {
+      els.modal.classList.remove('open')
+      els.modal.setAttribute('aria-hidden', 'true')
+      setText(els.modalError, '')
+      editing = null
+    }
+
+    const renderCardCollection = (rows, collectionKey) => {
+      const html = ['<div class="record-grid">']
+      rows.forEach(row => {
+        const meta = getRecordMeta(row, collectionKey)
+        const badges = buildBadges(row, row.data || {}, collectionKey)
+        html.push('<article class="record-card">')
+        html.push('<div class="record-head">')
+        html.push('<div class="record-title-wrap">')
+        html.push(`<div class="record-title">${escapeHtml(meta.title)}</div>`)
+        html.push(`<div class="record-subtitle">${escapeHtml(meta.subtitle || '')}</div>`)
+        html.push('</div>')
+        html.push(`<button type="button" class="cta ghost small" data-open="${escapeHtml(row.id)}">Open</button>`)
+        html.push('</div>')
+        if (badges.length) {
+          html.push('<div class="record-badges">')
+          badges.forEach(badge => {
+            html.push(`<span class="record-badge ${badge.tone ? `is-${badge.tone}` : ''}">${escapeHtml(badge.text)}</span>`)
+          })
+          html.push('</div>')
+        }
+        html.push('<div class="record-meta">')
+        meta.items.forEach(([label, value]) => {
+          const isDate = ['Starts', 'Joined', 'Created', 'Updated', 'Expires', 'When'].includes(label)
+          const out = isDate ? formatDateValue(value) : formatInlineValue(value)
+          html.push('<div class="record-meta-item">')
+          html.push(`<span class="record-meta-label">${escapeHtml(label)}</span>`)
+          html.push(`<span class="record-meta-value">${escapeHtml(out)}</span>`)
+          html.push('</div>')
+        })
+        html.push('</div>')
+        if (collectionKey === 'vouchers') {
+          html.push(`<div class="record-qr" data-voucher-qr="${escapeHtml(row.id)}"></div>`)
+        }
+        html.push(`<div class="record-foot"><code>${escapeHtml(row.id)}</code></div>`)
+        html.push('</article>')
+      })
+      html.push('</div>')
+      els.collTable.innerHTML = html.join('')
+    }
+
+    const hydrateVoucherQrs = () => {
+      if (!window.QRCode) return
+      els.collTable.querySelectorAll('[data-voucher-qr]').forEach(node => {
+        const code = (node.getAttribute('data-voucher-qr') || '').trim()
+        node.innerHTML = ''
+        if (!code) return
+        new window.QRCode(node, {
+          text: code,
+          width: 140,
+          height: 140,
+          colorDark: "#0a0a0a",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M
+        })
+      })
+    }
+
+    const renderTable = (rows) => {
+      if (!rows.length) {
+        els.collTable.innerHTML = '<div class="empty-state">No documents found.</div>'
+        return
+      }
+      const cardCollections = new Set(['users', 'events', 'wallets', 'purchases', 'vouchers', 'admin_audit'])
+      if (cardCollections.has(currentCollectionKey)) {
+        renderCardCollection(rows, currentCollectionKey)
+        if (currentCollectionKey === 'vouchers') hydrateVoucherQrs()
+        els.collTable.querySelectorAll('[data-open]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-open')
+            const row = rows.find(r => r.id === id)
+            if (!row) return
+            openDetailView(currentCollectionKey, id, row.data)
+          })
+        })
+        return
+      }
+      const html = ['<table class="data-table">', '<thead>', '<tr>']
+      const first = rows[0]
+      const keys = Object.keys(first.data || {})
+      html.push('<th>ID</th>')
+      keys.slice(0, 4).forEach(k => html.push(`<th>${k}</th>`))
+      html.push('<th>Actions</th>')
+      html.push('</tr>', '</thead>', '<tbody>')
+      rows.forEach(r => {
+        html.push('<tr>')
+        html.push(`<td><code>${r.id}</code></td>`)
+        keys.slice(0, 4).forEach(k => {
+          const val = (first.data || {})[k]
+          const display = typeof val === 'string' ? val : JSON.stringify(val).slice(0, 50)
+          html.push(`<td>${display}</td>`)
+        })
+        html.push(`<td><button type="button" class="cta ghost small" data-edit="${r.id}">Edit</button></td>`)
+        html.push('</tr>')
+      })
+      html.push('</tbody>', '</table>')
+      els.collTable.innerHTML = html.join('')
+      els.collTable.querySelectorAll('[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-edit')
+          const row = rows.find(r => r.id === id)
+          if (!row) return
+          const coll = resolveCollectionName(currentCollectionKey)
+          openModal({
+            title: `Edit ${coll}/${row.id}`,
+            sub: 'Edit JSON and save changes (merge).',
+            json: safeJson(row.data),
+            collectionName: coll,
+            docId: row.id,
+            canDelete: true,
+            onSave: async (obj) => {
+              await setDoc(doc(db, coll, row.id), obj, { merge: true })
+            },
+            onDelete: async () => {
+              await deleteDoc(doc(db, coll, row.id))
+            }
+          })
+        })
+      })
+    }
+
+    const loadCollectionPage = async (direction = 'next') => {
+      const coll = resolveCollectionName(currentCollectionKey)
+      const manualId = (els.docId && els.docId.value ? els.docId.value : '').trim()
+      if (manualId) {
+        const ref = doc(db, coll, manualId)
+        const snap = await getDoc(ref)
+        if (!snap.exists()) {
+          els.collTable.innerHTML = '<div class="empty">No document with that ID.</div>'
+          setText(els.pageInfo, '')
+          els.prevBtn.disabled = true
+          els.nextBtn.disabled = true
+          return
+        }
+        const row = { id: snap.id, data: snap.data() || {} }
+        lastLoadedRows = [row]
+        renderTable(lastLoadedRows)
+        setText(els.pageInfo, `1 document`)
+        els.prevBtn.disabled = true
+        els.nextBtn.disabled = true
+        return
+      }
+
+      const perPage = 12
+      const base = collection(db, coll)
+      const build = (mode, dir) => {
+        let baseQuery = base
+        
+        if (currentCollectionKey === 'events' && els.eventsFilter) {
+          const activeFilter = els.eventsFilter.querySelector('.is-active')?.dataset.filter || 'upcoming'
+          const now = new Date().toISOString()
+          if (activeFilter === 'upcoming') {
+            baseQuery = query(base, where('startDate', '>=', now))
+          } else {
+            baseQuery = query(base, where('startDate', '<', now))
+          }
+        }
+
+        const sort = mode === 'createdAt' ? orderBy('createdAt', 'desc') : orderBy('__name__')
+        let built = query(baseQuery, sort, limit(perPage))
+        if (dir === 'next' && lastDoc) built = query(baseQuery, sort, startAfter(lastDoc), limit(perPage))
+        if (dir === 'prev') {
+          const prevAnchor = firstDocStack.length ? firstDocStack[firstDocStack.length - 1] : null
+          built = prevAnchor ? query(baseQuery, sort, startAfter(prevAnchor), limit(perPage)) : query(baseQuery, sort, limit(perPage))
+        }
+        return built
+      }
+
+      let snap = null
+      try {
+        snap = await getDocs(build('createdAt', direction))
+      } catch (err) {
+        console.warn('Query failed, falling back to basic pagination:', err)
+        try {
+          // If complex query failed (missing index), fallback to basic
+          let fallbackBase = query(collection(db, coll), orderBy('__name__'), limit(perPage))
+          if (direction === 'next' && lastDoc) fallbackBase = query(collection(db, coll), orderBy('__name__'), startAfter(lastDoc), limit(perPage))
+          snap = await getDocs(fallbackBase)
+        } catch (fallbackErr) {
+          console.error('Fallback query also failed:', fallbackErr)
+          // Ultimate fallback (no order)
+          let ultimateFallback = query(collection(db, coll), limit(perPage))
+          if (direction === 'next' && lastDoc) ultimateFallback = query(collection(db, coll), startAfter(lastDoc), limit(perPage))
+          snap = await getDocs(ultimateFallback)
+        }
+      }
+      
+      let docs = snap.docs.map(d => ({ id: d.id, data: d.data() || {} }))
+      
+      // Client-side filtering fallback if we couldn't do it in the query (or if we want to ensure it works without indexes)
+      if (currentCollectionKey === 'events' && els.eventsFilter) {
+        const activeFilter = els.eventsFilter.querySelector('.is-active')?.dataset.filter || 'upcoming'
+        const now = new Date().toISOString()
+        docs = docs.filter(d => {
+          const dDate = d.data.startDate || d.data.date || d.data.createdAt || ''
+          if (!dDate) return true // Show events without dates in both or neither? Let's just include them.
+          if (activeFilter === 'upcoming') return dDate >= now
+          return dDate < now
+        })
+      }
+
+      lastLoadedRows = docs
+      renderTable(docs)
+
+      const first = snap.docs[0] || null
+      const last = snap.docs[snap.docs.length - 1] || null
+
+      if (direction === 'next' && first && lastDoc) firstDocStack.push(lastDoc)
+      if (direction === 'prev') firstDocStack.pop()
+
+      lastDoc = last || null
+      els.prevBtn.disabled = firstDocStack.length === 0
+      els.nextBtn.disabled = snap.docs.length < perPage
+      setText(els.pageInfo, docs.length ? `${docs.length} documents` : '0 documents')
+    }
+
+    const renderTopEvents = (items) => {
+      if (!items.length) {
+        els.topEvents.innerHTML = '<div class="empty">Not enough data yet.</div>'
+        return
+      }
+      const html = [
+        '<div class="table-head">',
+        '<div>Event</div>',
+        '<div>Purchases</div>',
+        '<div>Gross</div>',
+        '</div>',
+        ...items.map(i => [
+          '<div class="table-row">',
+          `<div class="mono">${(i.eventId || 'unknown').replaceAll('<','&lt;')}</div>`,
+          `<div>${num(i.count)}</div>`,
+          `<div>${money(i.gross)}</div>`,
+          '</div>'
+        ].join(''))
+      ].join('')
+      els.topEvents.innerHTML = html
+    }
+
+    const renderSpark = (series) => {
+      if (!series.length) {
+        els.sparkWrap.innerHTML = '<div class="empty">Not enough data yet.</div>'
+        return
+      }
+      const w = 640
+      const h = 140
+      const pad = 10
+      const max = Math.max(...series.map(s => s.value), 1)
+      const pts = series.map((s, i) => {
+        const x = pad + (i * (w - pad * 2)) / Math.max(1, series.length - 1)
+        const y = h - pad - (s.value * (h - pad * 2)) / max
+        return { x, y }
+      })
+      const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ')
+      const svg = `
+        <svg viewBox="0 0 ${w} ${h}" class="spark" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="rgba(255,255,255,0.85)"/>
+              <stop offset="1" stop-color="rgba(93,166,255,0.85)"/>
+            </linearGradient>
+          </defs>
+          <path d="${d}" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/>
+          <path d="${d} L ${pts[pts.length - 1].x.toFixed(2)} ${h - pad} L ${pts[0].x.toFixed(2)} ${h - pad} Z" fill="rgba(93,166,255,0.10)"/>
+        </svg>
+      `
+      els.sparkWrap.innerHTML = svg
+    }
+
+    const toAmount = (data) => {
+      const raw = data.amount ?? data.totalAmount ?? data.grossAmount ?? data.price ?? data.total ?? null
+      const n = Number(raw)
+      return Number.isFinite(n) ? n : 0
+    }
+
+    const toCommission = (data) => {
+      const direct = data.platformFee ?? data.commissionAmount ?? data.commission ?? null
+      const d = Number(direct)
+      if (Number.isFinite(d) && d > 0) return d
+      const rate = Number(commissionRate)
+      const amt = toAmount(data)
+      if (!Number.isFinite(rate) || rate <= 0) return 0
+      return amt * rate
+    }
+
+    const tryCount = async (collName) => {
+      try {
+        const agg = await getCountFromServer(collection(db, collName))
+        return agg.data().count || 0
+      } catch {
+        return 0
+      }
+    }
+
+    const trySum = async (collName, field) => {
+      try {
+        const agg = await getAggregateFromServer(collection(db, collName), {
+          total: sum(field)
+        })
+        return Number(agg.data().total) || 0
+      } catch {
+        return NaN
+      }
+    }
+
+    const createRevenueChart = (dailyData) => {
+      const ctx = document.getElementById('revenueChart').getContext('2d')
+      
+      // Destroy existing chart if it exists
+      if (window.revenueChartInstance) {
+        window.revenueChartInstance.destroy()
+      }
+      
+      const labels = dailyData.map(d => {
+        const date = new Date(d.key)
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      })
+      
+      const data = dailyData.map(d => d.value)
+      
+      window.revenueChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Daily Revenue',
+            data: data,
+            borderColor: '#5da6ff',
+            backgroundColor: 'rgba(93, 166, 255, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#5da6ff',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              borderColor: '#5da6ff',
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  return `Revenue: $${context.parsed.y.toFixed(2)}`
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 12
+                }
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 12
+                },
+                callback: function(value) {
+                  return '$' + value.toFixed(0)
+                }
+              },
+              beginAtZero: true
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          }
+        }
+      })
+    }
+
+    const createUserGrowthChart = (userData) => {
+      const ctx = document.getElementById('userGrowthChart').getContext('2d')
+      
+      // Destroy existing chart if it exists
+      if (window.userGrowthChartInstance) {
+        window.userGrowthChartInstance.destroy()
+      }
+      
+      const labels = userData.map(d => {
+        const date = new Date(d.key)
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      })
+      
+      const data = userData.map(d => d.value)
+      
+      window.userGrowthChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'New Users',
+            data: data,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              borderColor: '#10b981',
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  return `New Users: ${context.parsed.y}`
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 12
+                }
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 12
+                },
+                callback: function(value) {
+                  return value.toString()
+                }
+              },
+              beginAtZero: true
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          }
+        }
+      })
+    }
+
+    const createEventParticipationChart = (eventData) => {
+      const ctx = document.getElementById('eventParticipationChart').getContext('2d')
+      
+      // Destroy existing chart if it exists
+      if (window.eventParticipationChartInstance) {
+        window.eventParticipationChartInstance.destroy()
+      }
+      
+      const labels = eventData.map(d => d.eventName || d.eventId || 'Unknown')
+      const attendance = eventData.map(d => d.attendance || 0)
+      const capacity = eventData.map(d => d.capacity || 0)
+      
+      window.eventParticipationChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Attendance',
+            data: attendance,
+            backgroundColor: 'rgba(147, 51, 234, 0.8)',
+            borderColor: '#9333ea',
+            borderWidth: 1,
+            borderRadius: 4
+          }, {
+            label: 'Capacity',
+            data: capacity,
+            backgroundColor: 'rgba(147, 51, 234, 0.3)',
+            borderColor: '#9333ea',
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              borderColor: '#9333ea',
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y}`
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 11
+                },
+                maxRotation: 45
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                font: {
+                  size: 12
+                }
+              },
+              beginAtZero: true
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          }
+        }
+      })
+    }
+
+    const loadOverview = async () => {
+      const [usersCount, eventsCount, purchasesCount] = await Promise.all([
+        tryCount('users'),
+        tryCount('events'),
+        tryCount(purchasesCollectionName)
+      ])
+
+      setText(els.mUsers, num(usersCount))
+      setText(els.mEvents, num(eventsCount))
+      setText(els.mPurchases, num(purchasesCount))
+
+      const pickBestSum = async (fields) => {
+        const sums = await Promise.all(fields.map(f => trySum(purchasesCollectionName, f)))
+        let best = { field: null, value: NaN }
+        sums.forEach((v, idx) => {
+          if (!Number.isFinite(v)) return
+          if (!Number.isFinite(best.value) || v > best.value) best = { field: fields[idx], value: v }
+        })
+        return best
+      }
+
+      const grossPick = await pickBestSum(['amount', 'totalAmount', 'grossAmount', 'price', 'total'])
+      const commissionPick = await pickBestSum(['platformFee', 'commissionAmount', 'commission'])
+
+      setText(els.mGross, Number.isFinite(grossPick.value) ? money(grossPick.value) : '—')
+      setText(els.mCommission, Number.isFinite(commissionPick.value) ? money(commissionPick.value) : '—')
+
+      let recent = []
+      try {
+        const q = query(collection(db, purchasesCollectionName), orderBy('createdAt', 'desc'), limit(500))
+        const snap = await getDocs(q)
+        recent = snap.docs.map(d => d.data() || {})
+      } catch {
+        try {
+          const snap = await getDocs(query(collection(db, purchasesCollectionName), limit(500)))
+          recent = snap.docs.map(d => d.data() || {})
+        } catch {
+          recent = []
+        }
+      }
+
+      if (!Number.isFinite(grossPick.value) && recent.length) {
+        const approxGross = recent.reduce((acc, d) => acc + toAmount(d), 0)
+        setText(els.mGross, `${money(approxGross)} (recent)`)
+      }
+      if (!Number.isFinite(commissionPick.value) && recent.length) {
+        const approxCommission = recent.reduce((acc, d) => acc + toCommission(d), 0)
+        setText(els.mCommission, `${money(approxCommission)} (recent)`)
+      }
+
+      const now = new Date()
+      const days = []
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now)
+        d.setDate(now.getDate() - i)
+        const key = d.toISOString().slice(0, 10)
+        days.push({ key, value: 0 })
+      }
+
+      const top = new Map()
+      let withDates = 0
+      recent.forEach(p => {
+        const ts = p.createdAt && typeof p.createdAt.toDate === 'function' ? p.createdAt.toDate() : null
+        if (ts) {
+          const key = ts.toISOString().slice(0, 10)
+          const idx = days.findIndex(x => x.key === key)
+          if (idx >= 0) {
+            days[idx].value += toAmount(p) // Sum revenue amounts instead of counting
+            withDates += 1
+          }
+        }
+        const eventId = p.eventId || p.eventID || p.event || p.eventRef?.id || null
+        const entry = top.get(eventId || 'unknown') || { eventId: eventId || 'unknown', count: 0, gross: 0 }
+        entry.count += 1
+        entry.gross += toAmount(p)
+        top.set(entry.eventId, entry)
+      })
+
+      setText(els.trendSub, withDates ? `${num(withDates)} recent purchases with timestamps` : 'Add createdAt timestamps to purchases for trends')
+      createRevenueChart(days)
+
+      // Fetch user growth data from Firestore
+      let userDays = []
+      try {
+        const userGrowthData = []
+        const userQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(1000))
+        const userSnap = await getDocs(userQuery)
+        
+        // Group users by creation date
+        const userGroups = new Map()
+        userSnap.docs.forEach(doc => {
+          const userData = doc.data()
+          if (userData.createdAt && typeof userData.createdAt.toDate === 'function') {
+            const createdDate = userData.createdAt.toDate()
+            const dateKey = createdDate.toISOString().slice(0, 10)
+            userGroups.set(dateKey, (userGroups.get(dateKey) || 0) + 1)
+          }
+        })
+
+        // Create 14-day history
+        for (let i = 13; i >= 0; i--) {
+          const d = new Date(now)
+          d.setDate(now.getDate() - i)
+          const key = d.toISOString().slice(0, 10)
+          const count = userGroups.get(key) || 0
+          userGrowthData.push({ key, value: count })
+        }
+        userDays = userGrowthData
+      } catch (error) {
+        console.error('Error fetching user growth data:', error)
+        // Fallback to mock data if Firestore fails
+        for (let i = 13; i >= 0; i--) {
+          const d = new Date(now)
+          d.setDate(now.getDate() - i)
+          const key = d.toISOString().slice(0, 10)
+          userDays.push({ key, value: Math.floor(Math.random() * 20) + 5 })
+        }
+      }
+      createUserGrowthChart(userDays)
+
+      // Fetch event participation data from Firestore
+      let eventParticipationData = []
+      try {
+        const eventQuery = query(collection(db, 'events'), limit(10))
+        const eventSnap = await getDocs(eventQuery)
+        
+        eventParticipationData = await Promise.all(
+          eventSnap.docs.map(async (doc) => {
+            const eventData = doc.data()
+            const eventId = doc.id
+            
+            // Count attendees for this event
+            let attendance = 0
+            try {
+              const attendeeQuery = query(collection(db, 'purchases'), where('eventId', '==', eventId))
+              const attendeeSnap = await getDocs(attendeeQuery)
+              attendance = attendeeSnap.size
+            } catch (attendeeError) {
+              console.error(`Error fetching attendees for event ${eventId}:`, attendeeError)
+            }
+            
+            return {
+              eventName: eventData.name || eventData.title || 'Unknown Event',
+              attendance: attendance,
+              capacity: eventData.capacity || eventData.maxAttendees || 0
+            }
+          })
+        )
+        
+        // Sort by attendance and take top 5
+        eventParticipationData.sort((a, b) => b.attendance - a.attendance)
+        eventParticipationData = eventParticipationData.slice(0, 5)
+        
+      } catch (error) {
+        console.error('Error fetching event participation data:', error)
+        // Fallback to mock data if Firestore fails
+        eventParticipationData = [
+          { eventName: 'Summer Festival', attendance: 450, capacity: 500 },
+          { eventName: 'Tech Conference', attendance: 320, capacity: 400 },
+          { eventName: 'Music Concert', attendance: 280, capacity: 300 },
+          { eventName: 'Art Exhibition', attendance: 150, capacity: 200 },
+          { eventName: 'Food Market', attendance: 380, capacity: 450 }
+        ]
+      }
+      createEventParticipationChart(eventParticipationData)
+
+      const topList = Array.from(top.values())
+        .filter(x => x.eventId && x.eventId !== 'unknown')
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6)
+      renderTopEvents(topList)
+    }
+
+    const bindNav = () => {
+      els.backToListBtn.addEventListener('click', () => {
+        hide(els.viewDetail)
+        show(els.viewTable)
+        currentView = 'data'
+      })
+
+      els.eventsFilter.addEventListener('click', (e) => {
+        if (!e.target.matches('.pill')) return
+        els.eventsFilter.querySelectorAll('.pill').forEach(p => p.classList.remove('is-active'))
+        e.target.classList.add('is-active')
+        resetPaging()
+        loadCollectionPage()
+      })
+
+      document.querySelectorAll('.admin-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => setView(btn.dataset.view || 'overview'))
+      })
+    }
+
+    const bindTableActions = () => {
+      if (els.refreshBtn) els.refreshBtn.addEventListener('click', () => loadCollectionPage())
+      if (els.prevBtn) els.prevBtn.addEventListener('click', () => loadCollectionPage('prev'))
+      if (els.nextBtn) els.nextBtn.addEventListener('click', () => loadCollectionPage('next'))
+      if (els.collectionSelect) els.collectionSelect.addEventListener('change', () => setCollection(els.collectionSelect.value))
+      if (els.searchInput) {
+        els.searchInput.addEventListener('input', () => {
+          const q = (els.searchInput.value || '').trim().toLowerCase()
+          if (!q) {
+            renderTable(lastLoadedRows)
+            return
+          }
+          const filtered = lastLoadedRows.filter(r => {
+            if (String(r.id || '').toLowerCase().includes(q)) return true
+            const data = r.data || {}
+            return Object.keys(data).some(k => {
+              const v = data[k]
+              const s = typeof v === 'string' ? v : JSON.stringify(v)
+              return String(s || '').toLowerCase().includes(q)
+            })
+          })
+          renderTable(filtered)
+        })
+      }
+      if (els.newBtn) els.newBtn.addEventListener('click', () => {
+        const coll = resolveCollectionName(currentCollectionKey)
+        openModal({
+          title: `New ${coll}`,
+          sub: 'Create a new document. Add fields, then save.',
+          json: '{\n  "createdAt": null\n}\n',
+          collectionName: coll,
+          canDelete: false,
+          onSave: async (obj) => {
+            const ref = doc(collection(db, coll))
+            await setDoc(ref, obj, { merge: true })
+            return { id: ref.id }
+          }
+        })
+      })
+
+      if (els.createBtn) els.createBtn.addEventListener('click', () => {
+        const coll = resolveCollectionName(currentCollectionKey)
+        openModal({
+          title: `Create New ${coll}`,
+          sub: 'Create a new document. Add fields, then save.',
+          json: '{\n  "createdAt": null\n}\n',
+          collectionName: coll,
+          canDelete: false,
+          onSave: async (obj) => {
+            const ref = doc(collection(db, coll))
+            await setDoc(ref, obj, { merge: true })
+            return { id: ref.id }
+          }
+        })
+      })
+    }
+
+    const bindModal = () => {
+      els.modal.addEventListener('click', (e) => {
+        const close = e.target && e.target.getAttribute && e.target.getAttribute('data-close')
+        if (close) closeModal()
+      })
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && els.modal.classList.contains('open')) closeModal()
+      })
+      
+      // Toggle functionality
+      els.toggleJsonBtn.addEventListener('click', () => {
+        // Sync form data to JSON before switching
+        try {
+          const formData = getFormData()
+          els.json.value = JSON.stringify(formData, null, 2)
+        } catch (err) {
+          setText(els.modalError, 'Error syncing form to JSON: ' + err.message)
+          return
+        }
+        hide(els.formContainer)
+        show(els.jsonContainer)
+        els.json.focus()
+      })
+      
+      els.toggleFormBtn.addEventListener('click', () => {
+        // Sync JSON to form before switching
+        try {
+          const jsonData = JSON.parse(els.json.value)
+          generateFormFields(jsonData)
+        } catch (err) {
+          setText(els.modalError, 'Error syncing JSON to form: ' + err.message)
+          return
+        }
+        hide(els.jsonContainer)
+        show(els.formContainer)
+      })
+      
+      els.resetBtn.addEventListener('click', () => {
+        if (!editing) return
+        setText(els.modalError, '')
+        // Reset both form and JSON views
+        try {
+          const originalData = JSON.parse(editing.originalJson || '{}')
+          generateFormFields(originalData)
+          els.json.value = editing.originalJson || '{\n}\n'
+        } catch (err) {
+          els.json.value = editing.originalJson || '{\n}\n'
+        }
+      })
+      
+      els.saveBtn.addEventListener('click', async () => {
+        if (!editing) return
+        setText(els.modalError, '')
+        try {
+          let obj
+          // Check which view is active and get data accordingly
+          if (els.formContainer.style.display !== 'none') {
+            obj = getFormData()
+          } else {
+            obj = parseJson(els.json.value)
+          }
+          
+          // Validate required fields
+          if (!obj || typeof obj !== 'object' || Object.keys(obj).length === 0) {
+            throw new Error('Document cannot be empty')
+          }
+          
+          // Validate field names (no empty strings, no special characters that could cause issues)
+          const invalidFields = Object.keys(obj).filter(key => 
+            !key || typeof key !== 'string' || key.trim().length === 0 || key.includes('.') || key.includes('$')
+          )
+          if (invalidFields.length > 0) {
+            throw new Error(`Invalid field names: ${invalidFields.join(', ')}. Field names cannot be empty, contain dots, or dollar signs.`)
+          }
+          
+          // Validate data types for common fields
+          if (obj.createdAt && typeof obj.createdAt === 'string' && !isNaN(Date.parse(obj.createdAt))) {
+            obj.createdAt = new Date(obj.createdAt)
+          }
+          
+          // Show loading state
+          els.saveBtn.disabled = true
+          setText(els.saveBtn, 'Saving...')
+          
+          const result = await editing.onSave(obj)
+          const note = els.auditReason ? (els.auditReason.value || '').trim() : ''
+          const docId = (result && result.id) ? String(result.id) : (editing.docId || null)
+          await logAdminAction({
+            action: 'save',
+            targetCollection: editing.collectionName || resolveCollectionName(currentCollectionKey),
+            targetDocId: docId,
+            note,
+            payload: obj
+          })
+          closeModal()
+          if (currentView === 'overview') await loadOverview()
+          if (currentView !== 'overview') await loadCollectionPage()
+        } catch (err) {
+          setText(els.modalError, err && err.message ? err.message : 'Unable to save')
+          console.error('Save error:', err)
+        } finally {
+          // Reset button state
+          els.saveBtn.disabled = false
+          setText(els.saveBtn, 'Save')
+        }
+      })
+      
+      els.deleteBtn.addEventListener('click', async () => {
+        if (!editing || !editing.onDelete) return
+        setText(els.modalError, '')
+        
+        // Add confirmation dialog
+        if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+          return
+        }
+        
+        try {
+          // Show loading state
+          els.deleteBtn.disabled = true
+          setText(els.deleteBtn, 'Deleting...')
+          
+          await editing.onDelete()
+          const note = els.auditReason ? (els.auditReason.value || '').trim() : ''
+          await logAdminAction({
+            action: 'delete',
+            targetCollection: editing.collectionName || resolveCollectionName(currentCollectionKey),
+            targetDocId: editing.docId || null,
+            note,
+            payload: null
+          })
+          closeModal()
+          await loadCollectionPage()
+        } catch (err) {
+          setText(els.modalError, err && err.message ? err.message : 'Unable to delete')
+          console.error('Delete error:', err)
+        } finally {
+          // Reset button state
+          els.deleteBtn.disabled = false
+          setText(els.deleteBtn, 'Delete')
+        }
+      })
+    }
+
+    const bindRevenue = () => {
+      if (els.recalcBtn) {
+        els.recalcBtn.addEventListener('click', async () => {
+          purchasesCollectionName = els.purchasesColl ? els.purchasesColl.value : purchasesCollectionName
+          localStorage.setItem('hubpas_admin_purchasesColl', purchasesCollectionName)
+          const rate = Number(els.commissionRate ? els.commissionRate.value : commissionRate)
+          commissionRate = Number.isFinite(rate) ? rate : commissionRate
+          localStorage.setItem('hubpas_admin_commissionRate', String(commissionRate))
+          await loadOverview()
+        })
+      }
+
+      const parseRate = (raw) => {
+        const n = Number(raw)
+        if (!Number.isFinite(n)) return null
+        if (n < 0) return null
+        if (n > 1) return null
+        return n
+      }
+
+      if (els.saveEventCommissionBtn) {
+        els.saveEventCommissionBtn.addEventListener('click', async () => {
+          setText(els.commissionError, '')
+          try {
+            const rawId = (els.commissionEventId && els.commissionEventId.value ? els.commissionEventId.value : '').trim()
+            const id = rawId.includes('/') ? rawId.split('/').pop() : rawId
+            const rate = parseRate(els.commissionEventRate ? els.commissionEventRate.value : '')
+            if (!id) throw new Error('Event ID is required')
+            if (rate === null) throw new Error('Commission rate must be between 0 and 1 (e.g. 0.10)')
+            await setDoc(doc(db, 'events', id), {
+              commissionRateOverride: rate,
+              commissionRateUpdatedAt: new Date().toISOString(),
+              commissionRateUpdatedBy: currentUser ? currentUser.uid : null
+            }, { merge: true })
+            await logAdminAction({
+              action: 'commission_event_override',
+              targetCollection: 'events',
+              targetDocId: id,
+              note: '',
+              payload: { commissionRateOverride: rate }
+            })
+            setText(els.commissionError, 'Saved event override.')
+          } catch (err) {
+            setText(els.commissionError, err && err.message ? err.message : 'Unable to save event override')
+          }
+        })
+      }
+
+      if (els.saveOrgCommissionBtn) {
+        els.saveOrgCommissionBtn.addEventListener('click', async () => {
+          setText(els.commissionError, '')
+          try {
+            const uid = (els.commissionOrgUid && els.commissionOrgUid.value ? els.commissionOrgUid.value : '').trim()
+            const rate = parseRate(els.commissionOrgRate ? els.commissionOrgRate.value : '')
+            if (!uid) throw new Error('Organizer UID is required')
+            if (rate === null) throw new Error('Commission rate must be between 0 and 1 (e.g. 0.05)')
+            await setDoc(doc(db, 'commission_tiers', uid), {
+              uid,
+              rate,
+              active: true,
+              updatedAt: new Date().toISOString(),
+              updatedBy: currentUser ? currentUser.uid : null
+            }, { merge: true })
+            await logAdminAction({
+              action: 'commission_organizer_tier',
+              targetCollection: 'commission_tiers',
+              targetDocId: uid,
+              note: '',
+              payload: { rate, active: true }
+            })
+            setText(els.commissionError, 'Saved organizer tier.')
+          } catch (err) {
+            setText(els.commissionError, err && err.message ? err.message : 'Unable to save organizer tier')
+          }
+        })
+      }
+    }
+
+    const bindVouchers = () => {
+      if (els.openVouchersTableBtn) {
+        els.openVouchersTableBtn.addEventListener('click', () => setCollection('vouchers'))
+      }
+
+      const makeCode = () => {
+        const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+        let out = 'HUBPAS-'
+        for (let i = 0; i < 6; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)]
+        return out
+      }
+
+      const renderVoucherQr = (rawCode) => {
+        if (!els.voucherQrWrap || !els.voucherQr || !els.voucherQrText) return
+        const code = (rawCode || '').trim().toUpperCase()
+        if (!code) {
+          els.voucherQr.innerHTML = ''
+          setText(els.voucherQrText, '')
+          hide(els.voucherQrWrap)
+          return
+        }
+        els.voucherQr.innerHTML = ''
+        setText(els.voucherQrText, code)
+        show(els.voucherQrWrap)
+
+        if (window.QRCode) {
+          new window.QRCode(els.voucherQr, {
+            text: code,
+            width: 180,
+            height: 180,
+            colorDark: "#0a0a0a",
+            colorLight: "#ffffff",
+            correctLevel: window.QRCode.CorrectLevel.M
+          })
+          return
+        }
+
+        const fallback = document.createElement('div')
+        fallback.className = 'admin-muted'
+        fallback.textContent = code
+        els.voucherQr.appendChild(fallback)
+      }
+
+      if (els.createVoucherBtn) {
+        els.createVoucherBtn.addEventListener('click', async () => {
+          setText(els.voucherError, '')
+          try {
+            renderVoucherQr('')
+            const code = (els.voucherCode && els.voucherCode.value ? els.voucherCode.value : '').trim().toUpperCase() || makeCode()
+            const amount = Number(els.voucherAmount && els.voucherAmount.value ? els.voucherAmount.value : '')
+            const currency = (els.voucherCurrency && els.voucherCurrency.value ? els.voucherCurrency.value : 'USD').trim().toUpperCase()
+            const maxRedemptions = Math.max(1, Number(els.voucherMax && els.voucherMax.value ? els.voucherMax.value : 1))
+            const active = (els.voucherActive && els.voucherActive.value ? els.voucherActive.value : 'true') === 'true'
+            const expiresRaw = els.voucherExpires && els.voucherExpires.value ? els.voucherExpires.value : ''
+            const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : null
+
+            if (!code) throw new Error('Voucher code is required')
+            if (!Number.isFinite(amount) || amount <= 0) throw new Error('Amount must be a number greater than 0')
+            if (!currency) throw new Error('Currency is required')
+
+            await setDoc(doc(db, 'vouchers', code), {
+              code,
+              amount,
+              currency,
+              active,
+              maxRedemptions,
+              redeemedCount: 0,
+              expiresAt,
+              createdAt: new Date().toISOString(),
+              createdBy: currentUser ? currentUser.uid : null
+            }, { merge: true })
+
+            await logAdminAction({
+              action: 'voucher_create',
+              targetCollection: 'vouchers',
+              targetDocId: code,
+              note: '',
+              payload: { amount, currency, active, maxRedemptions, expiresAt }
+            })
+
+            if (els.voucherCode) els.voucherCode.value = code
+            renderVoucherQr(code)
+            setText(els.voucherError, `Created voucher ${code}`)
+          } catch (err) {
+            setText(els.voucherError, err && err.message ? err.message : 'Unable to create voucher')
+          }
+        })
+      }
+
+      if (els.disableVoucherBtn) {
+        els.disableVoucherBtn.addEventListener('click', async () => {
+          setText(els.voucherError, '')
+          try {
+            const code = (els.voucherCode && els.voucherCode.value ? els.voucherCode.value : '').trim().toUpperCase()
+            if (!code) throw new Error('Enter a voucher code to disable')
+            await setDoc(doc(db, 'vouchers', code), {
+              active: false,
+              disabledAt: new Date().toISOString(),
+              disabledBy: currentUser ? currentUser.uid : null
+            }, { merge: true })
+            await logAdminAction({
+              action: 'voucher_disable',
+              targetCollection: 'vouchers',
+              targetDocId: code,
+              note: '',
+              payload: { active: false }
+            })
+            setText(els.voucherError, `Disabled voucher ${code}`)
+          } catch (err) {
+            setText(els.voucherError, err && err.message ? err.message : 'Unable to disable voucher')
+          }
+        })
+      }
+    }
+
+    const bindModeration = () => {
+      if (els.openReportsTableBtn) {
+        els.openReportsTableBtn.addEventListener('click', () => setCollection('reports'))
+      }
+
+      if (els.applyUserModBtn) {
+        els.applyUserModBtn.addEventListener('click', async () => {
+          setText(els.moderationError, '')
+          try {
+            const uid = (els.modUserUid && els.modUserUid.value ? els.modUserUid.value : '').trim()
+            const action = els.modUserAction && els.modUserAction.value ? els.modUserAction.value : ''
+            if (!uid) throw new Error('User UID is required')
+            if (!action) throw new Error('Action is required')
+
+            const patch = { moderationUpdatedAt: new Date().toISOString(), moderationUpdatedBy: currentUser ? currentUser.uid : null }
+            if (action === 'verify') Object.assign(patch, { verified: true, verifiedAt: new Date().toISOString(), verifiedBy: currentUser ? currentUser.uid : null })
+            if (action === 'unverify') Object.assign(patch, { verified: false })
+            if (action === 'suspend') Object.assign(patch, { status: 'suspended', suspendedAt: new Date().toISOString() })
+            if (action === 'unsuspend') Object.assign(patch, { status: 'active', suspendedAt: null })
+            if (action === 'blockChat') Object.assign(patch, { chatBlocked: true })
+            if (action === 'unblockChat') Object.assign(patch, { chatBlocked: false })
+
+            await setDoc(doc(db, 'users', uid), patch, { merge: true })
+            await logAdminAction({ action: `user_${action}`, targetCollection: 'users', targetDocId: uid, note: '', payload: patch })
+            setText(els.moderationError, `Updated user ${uid}`)
+          } catch (err) {
+            setText(els.moderationError, err && err.message ? err.message : 'Unable to update user')
+          }
+        })
+      }
+
+      if (els.applyEventModBtn) {
+        els.applyEventModBtn.addEventListener('click', async () => {
+          setText(els.moderationError, '')
+          try {
+            const rawId = (els.modEventId && els.modEventId.value ? els.modEventId.value : '').trim()
+            const id = rawId.includes('/') ? rawId.split('/').pop() : rawId
+            const action = els.modEventAction && els.modEventAction.value ? els.modEventAction.value : ''
+            if (!id) throw new Error('Event ID is required')
+            if (!action) throw new Error('Action is required')
+
+            const patch = { moderationUpdatedAt: new Date().toISOString(), moderationUpdatedBy: currentUser ? currentUser.uid : null }
+            if (action === 'approve') Object.assign(patch, { status: 'approved', approvedAt: new Date().toISOString(), blocked: false })
+            if (action === 'reject') Object.assign(patch, { status: 'rejected', rejectedAt: new Date().toISOString() })
+            if (action === 'unlist') Object.assign(patch, { listed: false })
+            if (action === 'publish') Object.assign(patch, { listed: true })
+            if (action === 'block') Object.assign(patch, { blocked: true, status: 'blocked', blockedAt: new Date().toISOString() })
+            if (action === 'unblock') Object.assign(patch, { blocked: false })
+            if (action === 'verifyEvent') Object.assign(patch, { verifiedEvent: true, verifiedEventAt: new Date().toISOString() })
+            if (action === 'unverifyEvent') Object.assign(patch, { verifiedEvent: false })
+
+            await setDoc(doc(db, 'events', id), patch, { merge: true })
+            await logAdminAction({ action: `event_${action}`, targetCollection: 'events', targetDocId: id, note: '', payload: patch })
+            setText(els.moderationError, `Updated event ${id}`)
+          } catch (err) {
+            setText(els.moderationError, err && err.message ? err.message : 'Unable to update event')
+          }
+        })
+      }
+    }
+
+    const bindSettings = () => {
+      if (!els.copyUidBtn) return
+      els.copyUidBtn.addEventListener('click', async () => {
+        if (!currentUser) return
+        try {
+          await navigator.clipboard.writeText(currentUser.uid)
+          setText(els.uidText, `Copied: ${currentUser.uid}`)
+        } catch {
+          setText(els.uidText, `UID: ${currentUser.uid}`)
+        }
+      })
+    }
+
+    const bindDenied = () => {
+      if (!els.copyUidBtn2) return
+      els.copyUidBtn2.addEventListener('click', async () => {
+        if (!currentUser) return
+        try {
+          await navigator.clipboard.writeText(currentUser.uid)
+          setText(els.uidText2, `Copied: ${currentUser.uid}`)
+        } catch {
+          setText(els.uidText2, `UID: ${currentUser.uid}`)
+        }
+      })
+    }
+
+    if (els.signoutBtn) {
+      els.signoutBtn.addEventListener('click', async () => {
+        await signOut(auth)
+      })
+    }
+
+    if (els.loginForm) {
+      els.loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        setText(els.loginError, '')
+        if (els.loginBtn) els.loginBtn.disabled = true
+        try {
+          const email = (els.email && els.email.value ? els.email.value : '').trim()
+          const password = els.password && els.password.value ? els.password.value : ''
+          await signInWithEmailAndPassword(auth, email, password)
+        } catch (err) {
+          const msg = err && err.message ? err.message : 'Unable to sign in'
+          setText(els.loginError, msg.replace('Firebase: ', ''))
+        } finally {
+          if (els.loginBtn) els.loginBtn.disabled = false
+        }
+      })
+    }
+
+    bindNav()
+    bindTableActions()
+    bindModal()
+    bindRevenue()
+    bindVouchers()
+    bindModeration()
+    bindSettings()
+    bindDenied()
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user
+      setText(els.uidText, '')
+      setText(els.uidText2, '')
+      if (!user) {
+        hide(els.signoutBtn)
+        hide(els.side)
+        hide(els.notAdmin)
+        hide(els.app)
+        show(els.authCard)
+        setText(els.loginError, '')
+        setAuthFormEnabled(true)
+        return
+      }
+      setText(els.adminEmail, user.email || user.uid)
+      show(els.authCard)
+      hide(els.notAdmin)
+      hide(els.app)
+      hide(els.side)
+      setText(els.loginError, 'Checking admin access...')
+      setAuthFormEnabled(false)
+      try {
+        const ok = await guardAdmin(user)
+        if (!ok) return
+        hide(els.authCard)
+        setView('overview')
+        await loadOverview()
+      } catch (err) {
+        show(els.authCard)
+        hide(els.notAdmin)
+        hide(els.app)
+        hide(els.side)
+        show(els.signoutBtn)
+        setText(els.loginError, err && err.message ? err.message : 'Unable to load admin portal')
+        setAuthFormEnabled(false)
+      }
+    })
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>
