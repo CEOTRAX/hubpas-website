@@ -180,5 +180,74 @@
   </nav>
 
   <script src="script.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMTs10x-2tnzivvx5PW7d9r3KdfncUKpo",
+      authDomain: "dmap-50136.firebaseapp.com",
+      projectId: "dmap-50136",
+      storageBucket: "dmap-50136.firebasestorage.app",
+      messagingSenderId: "695873306591",
+      appId: "1:695873306591:web:c51485253a7c7d9849ce6a"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const db = getFirestore(app)
+
+    const form = document.getElementById('organizer-preview-form')
+    const message = document.getElementById('organizer-form-message')
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null
+
+    const normalizeEmail = (email) => String(email || '').trim().toLowerCase()
+    const safeDocId = (value) => String(value || '').replaceAll('/', '_')
+
+    if (form && message) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        if (!form.reportValidity()) return
+
+        const entries = {}
+        for (const [key, value] of new FormData(form).entries()) {
+          entries[key] = typeof value === 'string' ? value.trim() : value
+        }
+        const email = normalizeEmail(entries.email)
+        const fullName = String(entries.fullName || '').trim() || 'there'
+
+        if (!email) {
+          message.textContent = 'Please enter a valid email.'
+          return
+        }
+
+        if (submitBtn) submitBtn.disabled = true
+        message.textContent = 'Securing your spot...'
+
+        try {
+          const ref = doc(db, 'waitlist', safeDocId(email))
+          await setDoc(ref, {
+            ...entries,
+            email,
+            updatedAt: serverTimestamp(),
+            createdAtClient: new Date().toISOString(),
+            sourcePath: window.location.pathname
+          }, { merge: true })
+
+          message.textContent = `Thanks, ${fullName}. You're on the Hubpas waitlist. We will notify you when access opens.`
+          form.reset()
+        } catch (err) {
+          const raw = err && err.message ? String(err.message) : 'Unable to save your signup right now.'
+          const lowered = raw.toLowerCase()
+          if (lowered.includes('missing or insufficient permissions') || lowered.includes('permission')) {
+            message.textContent = 'Signup could not be saved yet (database permissions). Please try again later.'
+          } else {
+            message.textContent = 'Signup could not be saved. Please try again.'
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false
+        }
+      })
+    }
+  </script>
 </body>
 </html>

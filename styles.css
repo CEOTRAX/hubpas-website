@@ -780,6 +780,12 @@ main > * { position: relative; z-index: 1 }
   max-width: 52ch;
   font-size: 16px;
 }
+section#organizer-form > div.container > div.organizer-onboarding-card > div.organizer-onboarding-copy > p.hero-kicker {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
 .organizer-form-pane {
   min-width: 0;
   padding-left: 24px;

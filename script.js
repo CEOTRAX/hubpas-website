@@ -31,20 +31,6 @@ internalLinks.forEach(a => {
   })
 })
 
-const organizerForm = document.getElementById('organizer-preview-form')
-const organizerMessage = document.getElementById('organizer-form-message')
-if (organizerForm && organizerMessage) {
-  organizerForm.addEventListener('submit', (e) => {
-    e.preventDefault()
-    if (!organizerForm.reportValidity()) return
-
-    const nameInput = organizerForm.querySelector('[name="fullName"]')
-    const fullName = nameInput && nameInput.value ? nameInput.value.trim() : 'there'
-    organizerMessage.textContent = `Thanks, ${fullName}. You are on the Hubpas waitlist. We will notify you when access opens.`
-    organizerForm.reset()
-  })
-}
-
 const countdownRoot = document.querySelector('.waitlist-countdown[data-launch-date]')
 if (countdownRoot) {
   const launchDate = new Date(countdownRoot.getAttribute('data-launch-date') || '')
