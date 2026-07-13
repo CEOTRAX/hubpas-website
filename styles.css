@@ -22,8 +22,9 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 84px;
+  min-height: 100%;
 }
-html, body { height: 100% }
+html, body { min-height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -35,11 +36,15 @@ html, body { height: 100% }
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background:
-    radial-gradient(1000px 640px at 16% -6%, rgba(78,162,255,0.32), transparent 60%),
-    radial-gradient(860px 560px at 96% 10%, rgba(11,99,255,0.20), transparent 62%),
-    radial-gradient(720px 520px at 46% 72%, rgba(93,166,255,0.14), transparent 64%),
-    linear-gradient(180deg, #040713, #070b18 34%, #0b1020 62%, #0f1220);
+  background-color: #0d1e36;
+  background-image:
+    radial-gradient(1280px 760px at 16% -4%, rgba(78,162,255,0.26), transparent 62%),
+    radial-gradient(1120px 700px at 92% 12%, rgba(11,99,255,0.16), transparent 64%),
+    radial-gradient(980px 720px at 50% 82%, rgba(93,166,255,0.14), transparent 68%),
+    linear-gradient(180deg, #07101d 0%, #0a1628 30%, #0c1a2f 65%, #0d1e36 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
@@ -668,7 +673,8 @@ body.admin-body {
   margin-top: 40px;
   border-top: 1px solid rgba(255,255,255,0.06);
   padding: 20px 0;
-  background: rgba(255,255,255,0.04);
+  background:
+    linear-gradient(180deg, rgba(10,22,40,0), rgba(10,22,40,0.16) 48%, rgba(13,30,54,0.28) 100%);
 }
 .footer-grid {
   display: grid;
@@ -737,6 +743,19 @@ main > * { position: relative; z-index: 1 }
 
 .organizer-page {
   padding: 32px 0 72px;
+  position: relative;
+}
+.organizer-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 500px at 12% 8%, rgba(78,162,255,0.10), transparent 72%),
+    radial-gradient(720px 420px at 88% 24%, rgba(11,99,255,0.08), transparent 72%),
+    radial-gradient(960px 640px at 52% 100%, rgba(78,162,255,0.08), transparent 74%),
+    linear-gradient(180deg, rgba(255,255,255,0.015), rgba(120,170,255,0.02));
+  pointer-events: none;
+  z-index: 0;
 }
 .organizer-intake {
   padding: 16px 0 8px;
