@@ -119,7 +119,6 @@
 
               <div class="site-form-actions">
                 <button class="cta" type="submit">Join Waitlist</button>
-                <div class="site-form-note" id="organizer-form-message" aria-live="polite"></div>
               </div>
             </form>
           </div>
@@ -172,6 +171,25 @@
     </div>
   </footer>
 
+  <div class="modal" id="waitlist-modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Waitlist signup">
+      <div class="modal-head">
+        <div class="modal-title" id="waitlist-modal-title">Thanks — you're in</div>
+        <button class="cta ghost small" type="button" data-close="1">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="site-form-note" id="waitlist-modal-message"></div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div class="modal-foot-right">
+          <button class="cta" type="button" data-close="1">Okay</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile">
     <div class="mobile-inner">
       <a href="#top" aria-current="page">Home</a>
@@ -197,13 +215,51 @@
     const db = getFirestore(app)
 
     const form = document.getElementById('organizer-preview-form')
-    const message = document.getElementById('organizer-form-message')
     const submitBtn = form ? form.querySelector('button[type="submit"]') : null
+    const waitlistModal = document.getElementById('waitlist-modal')
+    const waitlistModalMessage = document.getElementById('waitlist-modal-message')
+    const waitlistModalTitle = document.getElementById('waitlist-modal-title')
+    const modalCloseEls = waitlistModal ? Array.from(waitlistModal.querySelectorAll('[data-close="1"]')) : []
+    let lastFocusedEl = null
+    const submitLabel = submitBtn ? submitBtn.textContent : ''
+
+    const openModal = ({ title, body } = {}) => {
+      if (!waitlistModal) return
+      if (waitlistModalTitle && title) waitlistModalTitle.textContent = title
+      if (waitlistModalMessage && body) waitlistModalMessage.textContent = body
+      lastFocusedEl = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      waitlistModal.classList.add('open')
+      waitlistModal.setAttribute('aria-hidden', 'false')
+      const firstFocusable = waitlistModal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      if (firstFocusable instanceof HTMLElement) firstFocusable.focus()
+    }
+
+    const closeModal = () => {
+      if (!waitlistModal) return
+      waitlistModal.classList.remove('open')
+      waitlistModal.setAttribute('aria-hidden', 'true')
+      if (lastFocusedEl) lastFocusedEl.focus()
+    }
+
+    if (waitlistModal && modalCloseEls.length) {
+      modalCloseEls.forEach((el) => el.addEventListener('click', closeModal))
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return
+        if (!waitlistModal.classList.contains('open')) return
+        closeModal()
+      })
+    }
 
     const normalizeEmail = (email) => String(email || '').trim().toLowerCase()
     const safeDocId = (value) => String(value || '').replaceAll('/', '_')
 
-    if (form && message) {
+    const setSubmitting = (isSubmitting) => {
+      if (!submitBtn) return
+      submitBtn.disabled = Boolean(isSubmitting)
+      submitBtn.textContent = isSubmitting ? 'Joining...' : submitLabel
+    }
+
+    if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault()
         if (!form.reportValidity()) return
@@ -216,12 +272,14 @@
         const fullName = String(entries.fullName || '').trim() || 'there'
 
         if (!email) {
-          message.textContent = 'Please enter a valid email.'
+          openModal({
+            title: 'Please check your email',
+            body: 'Enter a valid email address to join the waitlist.'
+          })
           return
         }
 
-        if (submitBtn) submitBtn.disabled = true
-        message.textContent = 'Securing your spot...'
+        setSubmitting(true)
 
         try {
           const ref = doc(db, 'waitlist', safeDocId(email))
@@ -233,18 +291,27 @@
             sourcePath: window.location.pathname
           }, { merge: true })
 
-          message.textContent = `Thanks, ${fullName}. You're on the Hubpas waitlist. We will notify you when access opens.`
+          openModal({
+            title: "Thanks — your access pass is coming",
+            body: `Thanks, ${fullName}. You're on the waitlist. We'll notify you as soon as access opens.`
+          })
           form.reset()
         } catch (err) {
           const raw = err && err.message ? String(err.message) : 'Unable to save your signup right now.'
           const lowered = raw.toLowerCase()
           if (lowered.includes('missing or insufficient permissions') || lowered.includes('permission')) {
-            message.textContent = 'Signup could not be saved yet (database permissions). Please try again later.'
+            openModal({
+              title: 'Signup unavailable',
+              body: 'Signup could not be saved yet (database permissions). Please try again later.'
+            })
           } else {
-            message.textContent = 'Signup could not be saved. Please try again.'
+            openModal({
+              title: 'Something went wrong',
+              body: 'Signup could not be saved. Please try again.'
+            })
           }
         } finally {
-          if (submitBtn) submitBtn.disabled = false
+          setSubmitting(false)
         }
       })
     }
