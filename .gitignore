@@ -4,3 +4,4 @@ server/*.log
 .admin-prototype-backup.html
 firebase-debug.log
 deployed-functions-inspection.json
+downloads/*.apk

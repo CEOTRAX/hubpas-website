@@ -1,7 +1,7 @@
 # Hubpas public website
 
-A responsive black website built around **Your access pass to all.** It introduces
-Hubpas events, communities, spaces, services, tickets and wallet features. The
+A responsive black and dark-blue website built around **Your pass to what’s happening.** It introduces
+Hubpas events, communities, tickets and wallet features. The
 access-pass artwork is illustrative CSS, with no image-generation service or
 database connection required to load the marketing pages.
 
@@ -14,6 +14,12 @@ database connection required to load the marketing pages.
   wording, contacts and dates are preserved.
 - `server/public-preview.cjs`: a dependency-free local server that serves only
   these public files.
+- `downloads/Hubpas.apk`: the Android release download, hosted separately from
+  Git source. APK binaries are ignored by Git. See `downloads/README.md`.
+
+The download section checks the APK URL with a HEAD request and enables the
+Android button only for an available binary. iPhone users open the existing
+Hubpas PWA and can follow the Safari Home Screen instructions.
 
 ## Run locally
 
@@ -26,6 +32,13 @@ node server/public-preview.cjs
 Open `http://127.0.0.1:8091/website/` or
 `http://127.0.0.1:8091/privacy.html`. Stop with Ctrl+C. Set
 `HUBPAS_PUBLIC_PORT` to use another port.
+
+The footer includes **Admin login**. In the local preview, `/admin.html` redirects
+to the separate management portal at `http://127.0.0.1:8080/admin.html`.
+That portal must be running locally (`node serve.cjs` in the full workspace).
+Its Firebase sign-in and assigned dashboard permissions still apply. The admin
+portal is separate from the public website files and needs its own protected
+deployment before the link can work on a public host.
 
 ## Hosting
 
