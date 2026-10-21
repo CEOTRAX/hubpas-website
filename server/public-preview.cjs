@@ -1,0 +1,4 @@
+const http=require('node:http'), fs=require('node:fs'), path=require('node:path');
+const root=path.resolve(__dirname,'..'), port=Number(process.env.HUBPAS_PUBLIC_PORT||8091);
+const routes={'/':'index.html','/website/':'index.html','/website/index.html':'index.html','/privacy.html':'privacy.html','/hubpas-site.css':'hubpas-site.css','/hubpas-site.js':'hubpas-site.js'};
+http.createServer((req,res)=>{const file=routes[new URL(req.url,'http://localhost').pathname];if(!file){res.writeHead(404).end('Not found');return;}res.setHeader('Content-Type',file.endsWith('.css')?'text/css':file.endsWith('.js')?'text/javascript':'text/html; charset=utf-8');res.setHeader('Cache-Control','no-store');fs.createReadStream(path.join(root,file)).pipe(res);}).listen(port,'127.0.0.1',()=>console.log('Public website preview: http://127.0.0.1:'+port+'/website/'));
