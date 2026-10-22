@@ -60,6 +60,11 @@ test("preview navigates every module, shows separate treasury and metadata, and 
       assert.match(document.getElementById('website-insights').textContent,/Android download clicks/);
       assert.match(document.getElementById('website-insights').textContent,/Daily activity/);
       assert.doesNotMatch(document.getElementById('website-insights').textContent,/could not load/);
+      document.getElementById('period').value='all';
+      await document.getElementById('apply-period').onclick();
+      assert.match(document.getElementById('website-insights').textContent,/Android download clicks/);
+      assert.doesNotMatch(document.getElementById('website-insights').textContent,/could not load|card is not defined/);
+      document.getElementById('period').value='this-month';
     }
     assert.equal(
       document.getElementById("page-title").textContent.length > 0,
