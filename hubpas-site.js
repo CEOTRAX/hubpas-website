@@ -7,6 +7,53 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu?.getAt
 document.querySelectorAll('[data-year]').forEach(node=>node.textContent=new Date().getFullYear());
 document.querySelector('[data-print]')?.addEventListener('click',()=>window.print());
 
+// An illustrative category sampler: no database reads or invented event listings.
+const vibes = {
+  music: ['♫', 'MUSIC & ENTERTAINMENT', 'One more song.', 'For the nights that turn into stories.'],
+  sport: ['↗', 'SPORTS', 'Bring your game.', 'A little friendly competition. A lot of good energy.'],
+  social: ['✳', 'SOCIAL', 'Your kind of people.', 'New faces. Familiar energy. Good company.'],
+  learn: ['✎', 'LEARNING', 'Go in curious.', 'Come out with something worth sharing.'],
+  community: ['♡', 'COMMUNITY', 'Better together.', 'Make a little room for your people.'],
+  business: ['▥', 'BUSINESS', 'Good connections.', 'The next conversation could start something.'],
+  faith: ['☀', 'FAITH', 'Find your fellowship.', 'A shared moment. A little more connection.'],
+  charity: ['+', 'CHARITY', 'Show up for good.', 'Small acts. Shared purpose. Real community.']
+};
+const vibePreview = document.querySelector('.vibe-preview');
+document.querySelectorAll('[data-vibe]').forEach(button => {
+  button.addEventListener('click', () => {
+    const selected = vibes[button.dataset.vibe];
+    if (!selected || !vibePreview) return;
+    document.querySelectorAll('[data-vibe]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
+    vibePreview.dataset.scene = button.dataset.vibe;
+    ['.scene-symbol', '.scene-category', '.scene-copy h3', '.scene-copy p'].forEach((selector, i) => {
+      vibePreview.querySelector(selector).textContent = selected[i];
+    });
+  });
+});
+
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+const motionToggle = document.querySelector('[data-motion-toggle]');
+let motionPaused = reducedMotion?.matches || false;
+function applyMotionPreference() {
+  document.documentElement.classList.toggle('motion-paused', motionPaused);
+  motionToggle?.setAttribute('aria-pressed', String(motionPaused));
+  if (motionToggle) motionToggle.textContent = motionPaused ? 'Resume animations ▷' : 'Pause animations Ⅱ';
+}
+applyMotionPreference();
+motionToggle?.addEventListener('click', () => { motionPaused = !motionPaused; applyMotionPreference(); });
+reducedMotion?.addEventListener('change', event => { motionPaused = event.matches; applyMotionPreference(); });
+
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+    entry.target.classList.toggle('motion-offscreen', !entry.isIntersecting);
+    if (entry.isIntersecting) entry.target.classList.add('is-visible');
+  }), {threshold:0.08});
+  document.querySelectorAll('.hero-art, .word-strip, .vibe-panel, .feature, .host-art, .spotlight-art, .kindness-art, .how-grid li').forEach(element => {
+    if (!reducedMotion?.matches && !element.closest('.hero')) element.classList.add('js-reveal');
+    observer.observe(element);
+  });
+}
+
 // An SPA fallback can return HTML with status 200 for a missing APK. Only enable
 // the download when this exact URL serves an Android package/binary response.
 const androidDownload = document.querySelector('[data-android-download]');
