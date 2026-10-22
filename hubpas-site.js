@@ -11,11 +11,11 @@ document.querySelector('[data-print]')?.addEventListener('click',()=>window.prin
 const vibes = {
   music: ['♫', 'MUSIC & ENTERTAINMENT', 'One more song.', 'For the nights that turn into stories.'],
   sport: ['↗', 'SPORTS', 'Bring your game.', 'A little friendly competition. A lot of good energy.'],
-  social: ['✳', 'SOCIAL', 'Your kind of people.', 'New faces. Familiar energy. Good company.'],
+  social: ['✳', 'SOCIAL & CONNECTION', 'Your kind of people.', 'New faces. Familiar energy. Good company.'],
   learn: ['✎', 'LEARNING', 'Go in curious.', 'Come out with something worth sharing.'],
   community: ['♡', 'COMMUNITY', 'Better together.', 'Make a little room for your people.'],
-  business: ['▥', 'BUSINESS', 'Good connections.', 'The next conversation could start something.'],
-  faith: ['☀', 'FAITH', 'Find your fellowship.', 'A shared moment. A little more connection.'],
+  business: ['▥', 'BUSINESS & CONFERENCES', 'Ideas meet people.', 'Conferences. Conversations. New connections.'],
+  faith: ['☀', 'FAITH & FELLOWSHIP', 'Gather with purpose.', 'Programmes that bring your faith community together.'],
   charity: ['+', 'CHARITY', 'Show up for good.', 'Small acts. Shared purpose. Real community.']
 };
 const vibePreview = document.querySelector('.vibe-preview');
