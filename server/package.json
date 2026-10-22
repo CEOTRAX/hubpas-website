@@ -1,0 +1,20 @@
+{
+  "name": "hubpas-admin-server",
+  "private": true,
+  "main": "cloud-functions.cjs",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node --test ../tests/*.test.cjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^5.1.0"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "prettier": "^3.0.0"
+  }
+}

@@ -5,3 +5,6 @@ server/*.log
 firebase-debug.log
 deployed-functions-inspection.json
 downloads/*.apk
+site-functions/node_modules/
+site-functions/site-metrics.cjs
+server/user-profile-index.json

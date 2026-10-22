@@ -1,0 +1,1 @@
+{"functions":[{"source":"site-functions","codebase":"hubpas-website-metrics","ignore":["node_modules",".git","*.log"],"predeploy":["node site-functions/build.cjs"]}]}

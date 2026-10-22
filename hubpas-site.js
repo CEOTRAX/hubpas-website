@@ -7,6 +7,35 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu?.getAt
 document.querySelectorAll('[data-year]').forEach(node=>node.textContent=new Date().getFullYear());
 document.querySelector('[data-print]')?.addEventListener('click',()=>window.print());
 
+// Anonymous daily totals only. Local previews, opted-out browsers and the app
+// itself are excluded. No URL parameters, referrers or visitor IDs are sent.
+const trackProduction = location.protocol === 'https:' && ['dmap-50136.web.app','dmap-50136.firebaseapp.com'].includes(location.hostname) && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true;
+const trackedPage = location.pathname === '/privacy.html' ? 'privacy' : /^\/website(?:\/(?:index\.html)?)?$/.test(location.pathname) ? 'website' : null;
+if (trackProduction && trackedPage) {
+  const sendCount = (type, visit = false) => {
+    const data=JSON.stringify({type,page:trackedPage,id:crypto.randomUUID(),visit});
+    try {
+      if (navigator.sendBeacon?.('/api/site-metrics',new Blob([data],{type:'text/plain'}))) return;
+    } catch { /* A blocked beacon must never interrupt the page or download. */ }
+    fetch('/api/site-metrics',{method:'POST',headers:{'Content-Type':'text/plain'},body:data,keepalive:true,credentials:'omit'}).catch(()=>{});
+  };
+  let counted = false, lastDownload = 0;
+  const pageView = () => {
+    if(counted || document.visibilityState !== 'visible')return;
+    counted=true;const now=Date.now();let visit=true;
+    try {const previous=Number(sessionStorage.getItem('hubpas-site-last-activity')||0);visit=!previous || now-previous>30*60*1000;sessionStorage.setItem('hubpas-site-last-activity',String(now));} catch { /* Count this view without persisting a session marker. */ }
+    sendCount('pageview',visit);
+  };
+  pageView();document.addEventListener('visibilitychange',pageView);
+  window.addEventListener('pageshow',event=>{if(event.persisted){counted=false;pageView();}});
+  document.addEventListener('click',event=>{
+    const link=event.target.closest?.('a[data-android-download]');
+    if(!link || Date.now()-lastDownload<2000)return;
+    lastDownload=Date.now();sendCount('androidDownload');
+    try {sessionStorage.setItem('hubpas-site-last-activity',String(lastDownload));}catch{}
+  });
+}
+
 // An illustrative category sampler: no database reads or invented event listings.
 const vibes = {
   music: ['♫', 'MUSIC & ENTERTAINMENT', 'One more song.', 'For the nights that turn into stories.'],

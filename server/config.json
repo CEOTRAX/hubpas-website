@@ -1,0 +1,11 @@
+{
+  "firebaseProjectId": "dmap-50136",
+  "monimeMainFinancialAccountId": "fac-k6PFYiMj6XJuRpwRF4K73mqKpBJ",
+  "currency": "SLE",
+  "firestoreEdition": "STANDARD",
+  "liveInspection": {
+    "checkedOn": "2026-10-07",
+    "functionsCount": 57,
+    "appSourceVersionVerified": false
+  }
+}
