@@ -48,7 +48,7 @@ if ('IntersectionObserver' in window) {
     entry.target.classList.toggle('motion-offscreen', !entry.isIntersecting);
     if (entry.isIntersecting) entry.target.classList.add('is-visible');
   }), {threshold:0.08});
-  document.querySelectorAll('.hero-art, .word-strip, .vibe-panel, .feature, .host-art, .spotlight-art, .kindness-art, .how-grid li').forEach(element => {
+  document.querySelectorAll('.hero-art, .word-strip, .vibe-panel, .feature, .host-art, .access-journey, .spotlight-art, .kindness-art, .how-grid li').forEach(element => {
     if (!reducedMotion?.matches && !element.closest('.hero')) element.classList.add('js-reveal');
     observer.observe(element);
   });
