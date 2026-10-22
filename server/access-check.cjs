@@ -32,7 +32,24 @@ async function verifySession(auth, token, revoked) {
     );
   }
 }
-async function checkAccess(token, services) {
+// Coalesce only requests that overlap in time. Completed checks are discarded:
+// every subsequent request still obtains current revocation and role state.
+const inFlight = new WeakMap();
+function checkAccess(token, services) {
+  let checks = inFlight.get(services);
+  if (!checks) {
+    checks = new Map();
+    inFlight.set(services, checks);
+  }
+  if (checks.has(token)) return checks.get(token);
+  const pending = runAccessCheck(token, services);
+  checks.set(token, pending);
+  pending.finally(() => {
+    if (checks.get(token) === pending) checks.delete(token);
+  }).catch(() => {});
+  return pending;
+}
+async function runAccessCheck(token, services) {
   const active = new Set();
   const step = async (name, run) => {
     active.add(name);

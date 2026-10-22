@@ -412,6 +412,9 @@ async function countResource(name, params, actor, services, filters = {}) {
   return values.reduce((sum, value) => sum + value, 0);
 }
 async function overview(params, actor, services) {
+  // The current wallet snapshot is independent of the period counts. Start it
+  // alongside the count queries so a cold aggregate does not add another round trip.
+  const liabilitiesPromise = customerLiabilitiesForOverview(params, actor, services);
   const names = [
     "users",
     "events",
@@ -513,6 +516,31 @@ async function overview(params, actor, services) {
     (countValue(2) != null &&
       data.walletTransactions &&
       countValue(2) > data.walletTransactions.rows.length);
+  const { customerLiabilities, error: liabilitiesError } = await liabilitiesPromise;
+  if (liabilitiesError)
+    errors.push({
+      resource: "customer-wallet-liabilities",
+      message: safeMessage(liabilitiesError),
+    });
+  return {
+    cards,
+    finance,
+    customerLiabilities,
+    errors,
+    limited,
+    coverage: limited
+      ? "Platform counts are aggregated. Transaction amounts use up to 100 recent entries; narrow the period for complete observed amounts."
+      : "Platform counts use server aggregations. Transaction amounts use confirmed recorded activity.",
+    financeLimit: 100,
+    currency: "SLE",
+    definitions: {
+      finance:
+        "Successful recorded walletTransactions only; transfer_in legs excluded, transfer_out deduplicated by transferId, topups by orderId, positive hubpas subscription/boost revenue counted once. Refunds/reversals are not revenue. Missing statuses excluded; legacy currency absent is source-default SLE and deployed version remains unverified.",
+    },
+    asOf: new Date().toISOString(),
+  };
+}
+async function customerLiabilitiesForOverview(params, actor, services) {
   let customerLiabilities = null;
   if (
     !actor.deniedResources?.includes("users") &&
@@ -562,28 +590,9 @@ async function overview(params, actor, services) {
       );
       customerLiabilities = current;
     } catch (error) {
-      errors.push({
-        resource: "customer-wallet-liabilities",
-        message: safeMessage(error),
-      });
+      return { customerLiabilities: null, error };
     }
-  return {
-    cards,
-    finance,
-    customerLiabilities,
-    errors,
-    limited,
-    coverage: limited
-      ? "Platform counts are aggregated. Transaction amounts use up to 100 recent entries; narrow the period for complete observed amounts."
-      : "Platform counts use server aggregations. Transaction amounts use confirmed recorded activity.",
-    financeLimit: 100,
-    currency: "SLE",
-    definitions: {
-      finance:
-        "Successful recorded walletTransactions only; transfer_in legs excluded, transfer_out deduplicated by transferId, topups by orderId, positive hubpas subscription/boost revenue counted once. Refunds/reversals are not revenue. Missing statuses excluded; legacy currency absent is source-default SLE and deployed version remains unverified.",
-    },
-    asOf: new Date().toISOString(),
-  };
+  return { customerLiabilities, error: null };
 }
 async function userSummary(params, actor, services) {
   const id = params.get("id");

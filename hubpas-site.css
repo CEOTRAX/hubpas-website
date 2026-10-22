@@ -98,3 +98,20 @@
 @media(max-width:720px){.vibe-panel{grid-template-columns:1fr;padding:0;gap:0}.vibe-controls{padding:25px}.vibe-controls h3{font-size:35px;letter-spacing:-1.6px;margin:14px 0 21px}.vibe-controls h3 br{display:none}.vibe-controls .text-link{margin-top:22px}.vibe-options{gap:8px}.vibe-options button{font-size:11px;padding:10px 13px}.vibe-preview{min-height:340px}.scene-ring{width:220px;height:220px;left:calc(50% - 110px);top:20px}.scene-symbol{font-size:120px;top:5px}.scene-stamp{width:60px;height:60px;font-size:7px;right:18px;top:18px}.scene-copy{left:25px;bottom:48px}.scene-copy h3{font-size:35px;margin:8px 0}.scene-copy p{font-size:12px}.demo-label{left:25px;bottom:17px;font-size:8px}.moment-trail{gap:10px;padding:0;margin-top:21px;justify-content:space-between}.moment-trail span{font-size:10px;max-width:95px;gap:6px;line-height:1.5}.moment-trail b{font-size:20px}.moment-trail i{font-size:18px}.feature{min-height:310px}.feature-graphic{margin-top:10px}.feature h3{margin-top:20px}.feature p{max-width:100%}.spotlight-art{height:310px}.growth-grid{gap:18px}.checkin-chip{font-size:10px;padding:12px;left:15px}.host-list p{max-width:none}.kindness-art{padding:20px}.how-section h2{font-size:35px}.hero .intro{max-width:280px;font-size:17px}.hero-art{height:445px}.word-strip>.marquee-track{gap:28px}.word-strip span{font-size:17px}.section-heading>p{font-size:15px}.footer-bottom{gap:12px 20px}}
 html.motion-paused *,html.motion-paused *:before,html.motion-paused *:after,.motion-offscreen *{animation-play-state:paused!important}.motion-paused .js-reveal{opacity:1;transform:none;transition:none}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}.js-reveal{opacity:1;transform:none}.word-strip>.marquee-track{transform:none}.word-strip{overflow:hidden}}
+
+/* Category selector: clear, comfortable targets that stay paired with the preview. */
+.vibe-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.vibe-options button{min-height:49px;width:100%;padding:11px 14px;text-align:left;border-radius:12px;background:#141b28;border-color:#33435b;color:#d5e2f5;font-size:13px;font-weight:600;line-height:1.2;transition:background .2s,transform .2s,border-color .2s,box-shadow .2s}
+.vibe-options button:hover{background:#1c2a43;box-shadow:0 6px 18px #0004}
+.vibe-options button:focus-visible{outline:2px solid #9fc2ff;outline-offset:3px}
+.vibe-options button[aria-pressed=true]{background:#194788;border-color:#76a9ff;box-shadow:inset 3px 0 #9fc7ff,0 0 0 1px #548ce855}
+@media(max-width:720px){
+  .vibe-panel{display:flex;flex-direction:column}
+  .vibe-controls{display:contents}
+  .vibe-controls>.eyebrow{order:0;padding:25px 25px 0}
+  .vibe-controls h3{order:0;padding:0 25px;margin:14px 0 24px}
+  .vibe-preview{order:1;width:100%}
+  .vibe-options{order:2;padding:20px 20px 0;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .vibe-options button{min-height:50px;padding:10px 12px;font-size:12px}
+  .vibe-controls .text-link{order:3;margin:23px 20px 26px}
+}

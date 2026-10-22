@@ -41,6 +41,34 @@ test("verified tokens run revocation and current permissions in parallel, awaiti
   finishRevocation();
   assert.deepEqual(await pending, { identity, assignment });
 });
+test("overlapping requests share verification but the next request rechecks access", async () => {
+  let release, signatures = 0, revocations = 0, assignments = 0;
+  const services = {
+    auth: { verifyIdToken: async (_token, revoked) => {
+      if (revoked) {
+        revocations++;
+        await new Promise((resolve) => { release = resolve; });
+      } else signatures++;
+      return { uid: "customer" };
+    } },
+    readAssignment: async () => { assignments++; return { exists: true }; },
+  };
+  const first = checkAccess("same-token", services);
+  const second = checkAccess("same-token", services);
+  assert.strictEqual(first, second);
+  await new Promise(setImmediate);
+  assert.equal(signatures, 1);
+  assert.equal(assignments, 1);
+  release();
+  await Promise.all([first, second]);
+  const third = checkAccess("same-token", services);
+  await new Promise(setImmediate);
+  assert.equal(signatures, 2);
+  assert.equal(revocations, 2);
+  assert.equal(assignments, 2);
+  release();
+  await third;
+});
 test("invalid signatures never initiate role reads and revoked sessions cannot open access", async () => {
   let reads = 0;
   const db = {
