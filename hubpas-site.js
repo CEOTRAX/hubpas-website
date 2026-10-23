@@ -72,6 +72,40 @@ applyMotionPreference();
 motionToggle?.addEventListener('click', () => { motionPaused = !motionPaused; applyMotionPreference(); });
 reducedMotion?.addEventListener('change', event => { motionPaused = event.matches; applyMotionPreference(); });
 
+// A small depth shift on decorative layers. Keep it bounded and stop it for
+// reduced-motion visitors or when the site's motion toggle is paused.
+const parallaxLayers = [
+  ['.hero-art .access-pass', 0.055],
+  ['.hero-art .floating-ticket', -0.075],
+  ['.vibe-preview .scene-stamp', 0.06],
+  ['.host-art .host-sticker', -0.065],
+  ['.spotlight-art .boost-label', 0.07],
+  ['.closing-star', -0.05]
+].map(([selector, depth]) => ({element: document.querySelector(selector), depth})).filter(({element}) => element);
+let parallaxFrame = 0;
+function updateParallax() {
+  parallaxFrame = 0;
+  const enabled = !motionPaused && !reducedMotion?.matches;
+  const midpoint = window.innerHeight / 2;
+  for (const {element, depth} of parallaxLayers) {
+    const rect = element.getBoundingClientRect();
+    const distance = rect.top + rect.height / 2 - midpoint;
+    const shift = enabled && rect.bottom >= 0 && rect.top <= window.innerHeight
+      ? Math.max(-26, Math.min(26, Math.round(-distance * depth))) : 0;
+    element.style.setProperty('--parallax-y', shift + 'px');
+  }
+}
+function requestParallax() {
+  if (!parallaxFrame) parallaxFrame = window.requestAnimationFrame(updateParallax);
+}
+if (parallaxLayers.length) {
+  window.addEventListener('scroll', requestParallax, {passive:true});
+  window.addEventListener('resize', requestParallax, {passive:true});
+  motionToggle?.addEventListener('click', requestParallax);
+  reducedMotion?.addEventListener('change', requestParallax);
+  requestParallax();
+}
+
 if ('IntersectionObserver' in window) {
   const observer = new IntersectionObserver(entries => entries.forEach(entry => {
     entry.target.classList.toggle('motion-offscreen', !entry.isIntersecting);

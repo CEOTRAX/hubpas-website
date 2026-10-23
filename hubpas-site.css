@@ -115,3 +115,8 @@ html.motion-paused *,html.motion-paused *:before,html.motion-paused *:after,.mot
   .vibe-options button{min-height:50px;padding:10px 12px;font-size:12px}
   .vibe-controls .text-link{order:3;margin:23px 20px 26px}
 }
+
+/* Independent translate keeps the existing tilt and floating animations intact. */
+.hero-art .access-pass,.hero-art .floating-ticket,.vibe-preview .scene-stamp,.host-art .host-sticker,.spotlight-art .boost-label,.closing-star{translate:0 var(--parallax-y,0px)}
+html.motion-paused .hero-art .access-pass,html.motion-paused .hero-art .floating-ticket,html.motion-paused .vibe-preview .scene-stamp,html.motion-paused .host-art .host-sticker,html.motion-paused .spotlight-art .boost-label,html.motion-paused .closing-star{translate:0 0}
+@media(prefers-reduced-motion:reduce){.hero-art .access-pass,.hero-art .floating-ticket,.vibe-preview .scene-stamp,.host-art .host-sticker,.spotlight-art .boost-label,.closing-star{translate:0 0}}
