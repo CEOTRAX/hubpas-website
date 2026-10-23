@@ -600,29 +600,11 @@ async function userSummary(params, actor, services) {
   const own = new URLSearchParams(params);
   own.set("resource", "users");
   const { resource, ref } = await resourceFor(own, actor, services);
-  const snap = await ref.doc(id).get();
-  if (!snap.exists) fail(404, "Customer not found.");
-  const profile = projectRecord(
-    id,
-    snap.data(),
-    resource,
-    actor.roles,
-    actor.deniedResources,
-  );
-  profile.version = fingerprint(profile.data);
-  profile.source = ref.path + "/" + id;
+  // All of these are independent reads for the same authorised customer.
+  const profilePromise = ref.doc(id).get();
   const financial =
     actor.roles.some((role) => ["super_admin", "finance"].includes(role)) &&
     !actor.deniedResources?.includes("wallet");
-  if (!financial)
-    for (const key of [
-      "walletBalance",
-      "walletHeldBalance",
-      "wallet",
-      "financialAccount",
-      "monimeFinancialAccountId",
-    ])
-      delete profile.data[key];
   const statusPromise =
     id === actor.uid
       ? Promise.resolve("Active")
@@ -643,7 +625,7 @@ async function userSummary(params, actor, services) {
       return countResource(name, p, actor, services);
     }),
   );
-  const sources = await Promise.allSettled(
+  const sourcesPromise = Promise.allSettled(
     ["walletTransactions"].map(async (name) => {
       const p = new URLSearchParams(params);
       p.set("search", id);
@@ -651,6 +633,27 @@ async function userSummary(params, actor, services) {
       return sample(name, p, actor, services, 50, true);
     }),
   );
+  const snap = await profilePromise;
+  if (!snap.exists) fail(404, "Customer not found.");
+  const profile = projectRecord(
+    id,
+    snap.data(),
+    resource,
+    actor.roles,
+    actor.deniedResources,
+  );
+  profile.version = fingerprint(profile.data);
+  profile.source = ref.path + "/" + id;
+  if (!financial)
+    for (const key of [
+      "walletBalance",
+      "walletHeldBalance",
+      "wallet",
+      "financialAccount",
+      "monimeFinancialAccountId",
+    ])
+      delete profile.data[key];
+  const sources = await sourcesPromise;
   const rows = sources[0].status === "fulfilled" ? sources[0].value.rows : [];
   const definitions = await schema();
   const transactions = rows

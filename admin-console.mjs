@@ -1696,6 +1696,16 @@ export async function mountDashboard({
     const request = ++state.request;
     $("overview").innerHTML =
       '<div class="loader">Loading period summary…</div>';
+    // Treasury is independent of the period summary. Start both requests now,
+    // while one current access check can serve their overlapping verification.
+    const treasuryResult =
+      state.session.roles.some((role) => ["super_admin", "finance"].includes(role)) &&
+      !state.session.deniedResources?.includes("treasury")
+        ? api("treasury").then(
+            (value) => ({ value }),
+            (error) => ({ error }),
+          )
+        : null;
     try {
       const result = await api("overview", rangeParams());
       if (request !== state.request) return;
@@ -1769,14 +1779,14 @@ export async function mountDashboard({
         "</p>";
       $("overview-events").onclick = () => openModule("events");
       $("overview-wallets").onclick = () => openModule("wallets");
-      renderFinanceOverview(result, request);
+      renderFinanceOverview(result, request, treasuryResult);
     } catch (error) {
       if (request === state.request)
         $("overview").innerHTML =
           '<div class="notice error">' + escape(error.message) + "</div>";
     }
   }
-  async function renderFinanceOverview(summary, request) {
+  async function renderFinanceOverview(summary, request, treasuryResult = null) {
     if (!summary.finance && !summary.customerLiabilities) return;
     const card = (label, value, note) =>
       '<div class="card"><div class="metric-label">' +
@@ -1888,8 +1898,12 @@ export async function mountDashboard({
     }
     render(null);
     try {
-      const treasury = await api("treasury");
-      render(treasury);
+      const settled = await (treasuryResult || api("treasury").then(
+        (value) => ({ value }),
+        (error) => ({ error }),
+      ));
+      if (settled.error) throw settled.error;
+      render(settled.value);
     } catch (error) {
       if (request === state.request) {
         render({ provider: {}, ledger: {} });

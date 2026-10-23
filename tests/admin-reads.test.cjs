@@ -24,7 +24,7 @@ test("authenticated user navigation fetches one summary and only the requested a
     },
   ];
   const calls = [];
-  let pause = false;
+  let pause = false, pauseOverview = false, releaseOverview;
   const app = await (
     await import("../admin-console.mjs")
   ).mountDashboard({
@@ -33,6 +33,8 @@ test("authenticated user navigation fetches one summary and only the requested a
       const parsed = new URL(url, "http://localhost");
       const path = parsed.pathname.split("/").pop();
       calls.push({ path, params: parsed.searchParams });
+      if (pauseOverview && path === "overview")
+        await new Promise((resolve) => { releaseOverview = resolve; });
       if (pause && path === "record")
         return new Promise((resolve, reject) =>
           options.signal.addEventListener(
@@ -115,6 +117,13 @@ test("authenticated user navigation fetches one summary and only the requested a
     await new Promise(setImmediate);
     await app.openModule("users");
     await rejected;
+    calls.length = 0;
+    pauseOverview = true;
+    const opening = app.openModule("overview");
+    await new Promise(setImmediate);
+    assert.deepEqual(calls.map((call) => call.path).sort(), ["overview", "treasury"]);
+    releaseOverview();
+    await opening;
   } finally {
     dom.window.close();
     delete global.document;
