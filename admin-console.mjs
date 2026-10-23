@@ -420,12 +420,6 @@ export async function mountDashboard({
     return params;
   };
   const demoApi = (path, params) => {
-    if (path === 'website-insights') {
-      const today = new Date().toISOString().slice(0,10), days = [];
-      for(let i=6;i>=0;i--) {const day=new Date();day.setUTCDate(day.getUTCDate()-i);const date=day.toISOString().slice(0,10);if((!params.get('from')||date>=params.get('from'))&&(!params.get('to')||date<=params.get('to')))days.push({date,visits:25+i*3,pageViews:36+i*4,androidDownloads:5+i,websiteViews:30+i*4,privacyViews:6});}
-      const totals={visits:0,pageViews:0,androidDownloads:0,websiteViews:0,privacyViews:0};for(const day of days)for(const key of Object.keys(totals))totals[key]+=day[key];
-      return {days,totals,from:params.get('from')||today,to:params.get('to')||today,trackingStartedAt:(days[0]?.date||today)+'T00:00:00.000Z',asOf:new Date().toISOString(),cacheSeconds:60};
-    }
     if (path === "user-summary") {
       const profile = examples.users.find((row) => row.id === params.get("id"));
       const transactions = examples.walletTransactions
@@ -1682,6 +1676,10 @@ export async function mountDashboard({
   };
   async function loadWebsiteInsights() {
     const request=++state.request, target=$('website-insights');
+    if (preview) {
+      target.innerHTML='<div class="card"><h2>Live website insights</h2><p>Visit and Android download figures are available after dashboard sign-in. This preview is disconnected from the database and cannot show verified counts.</p><a href="/admin.html">Open live sign-in</a></div>';
+      return;
+    }
     const card=(label,value,note)=>'<div class="card"><div class="metric-label">'+escape(label)+'</div><div class="metric-value">'+escape(value)+'</div><p class="small muted">'+escape(note)+'</p></div>';
     target.innerHTML='<div class="loader">Loading website activity…</div>';
     try {

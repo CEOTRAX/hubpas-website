@@ -57,13 +57,12 @@ test("preview navigates every module, shows separate treasury and metadata, and 
     await app.openModule(module);
     if(module==='website') {
       assert.equal(document.getElementById('website-insights').hidden,false);
-      assert.match(document.getElementById('website-insights').textContent,/Android download clicks/);
-      assert.match(document.getElementById('website-insights').textContent,/Daily activity/);
-      assert.doesNotMatch(document.getElementById('website-insights').textContent,/could not load/);
+      assert.match(document.getElementById('website-insights').textContent,/cannot show verified counts/);
+      assert.match(document.getElementById('website-insights').querySelector('a').href,/\/admin\.html$/);
+      assert.doesNotMatch(document.getElementById('website-insights').textContent,/Android download clicks|Daily activity|could not load/);
       document.getElementById('period').value='all';
       await document.getElementById('apply-period').onclick();
-      assert.match(document.getElementById('website-insights').textContent,/Android download clicks/);
-      assert.doesNotMatch(document.getElementById('website-insights').textContent,/could not load|card is not defined/);
+      assert.match(document.getElementById('website-insights').textContent,/cannot show verified counts/);
       document.getElementById('period').value='this-month';
     }
     assert.equal(

@@ -1,5 +1,15 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {handleSiteMetrics,parseEvent,countersFor,range,readWebsiteInsights}=require('../server/site-metrics.cjs');
+test('Android download links directly to the published APK without a disabled placeholder',()=>{
+  const fs=require('node:fs'),path=require('node:path'),{JSDOM}=require('../server/node_modules/jsdom');
+  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const dom=new JSDOM(html);
+  const link=dom.window.document.querySelector('[data-android-download]');
+  assert.equal(link?.tagName,'A');
+  assert.equal(link.getAttribute('href'),'https://dmap-50136.web.app/downloads/Hubpas.apk');
+  assert.doesNotMatch(html,/Android download unavailable/);
+  dom.window.close();
+});
 const event=(extra={})=>({id:require('node:crypto').randomUUID(),type:'pageview',page:'website',visit:true,...extra});
 async function ingest(body, overrides={}, write=async()=>{}) {
   const req={method:'POST',headers:{origin:'https://dmap-50136.web.app','user-agent':'Browser tests'},body,...overrides};

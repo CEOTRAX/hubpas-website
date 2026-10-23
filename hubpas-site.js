@@ -35,7 +35,6 @@ if (trackProduction && trackedPage) {
     try {sessionStorage.setItem('hubpas-site-last-activity',String(lastDownload));}catch{}
   });
 }
-
 // An illustrative category sampler: no database reads or invented event listings.
 const vibes = {
   music: ['♫', 'MUSIC & ENTERTAINMENT', 'One more song.', 'For the nights that turn into stories.'],
@@ -115,25 +114,4 @@ if ('IntersectionObserver' in window) {
     if (!reducedMotion?.matches && !element.closest('.hero')) element.classList.add('js-reveal');
     observer.observe(element);
   });
-}
-
-// An SPA fallback can return HTML with status 200 for a missing APK. Only enable
-// the download when this exact URL serves an Android package/binary response.
-const androidDownload = document.querySelector('[data-android-download]');
-if (androidDownload) {
-  fetch('/downloads/Hubpas.apk', {method:'HEAD', cache:'no-store'})
-    .then(response => {
-      const type = (response.headers.get('content-type') || '').split(';')[0];
-      const length = response.headers.get('content-length');
-      if (!response.ok || !['application/vnd.android.package-archive','application/octet-stream'].includes(type) || (length !== null && !(Number(length) > 0))) return;
-      const link = document.createElement('a');
-      link.className = 'button dark';
-      link.href = '/downloads/Hubpas.apk';
-      link.download = 'Hubpas.apk';
-      link.dataset.androidDownload = '';
-      link.textContent = 'Download Hubpas for Android ↓';
-      androidDownload.replaceWith(link);
-      document.querySelector('#android-download-title')?.closest('article').querySelector('.download-note')?.replaceChildren(document.createTextNode('Android APK · direct download to your device.'));
-    })
-    .catch(() => { /* Keep an unavailable download clearly labelled. */ });
 }
