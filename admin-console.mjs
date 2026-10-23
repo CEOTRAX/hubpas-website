@@ -350,10 +350,11 @@ export async function mountDashboard({
   fetcher = globalThis.fetch,
   authLoader,
 } = {}) {
-  const preview =
-    forcePreview ||
-    (["localhost", "127.0.0.1", "[::1]"].includes(location.hostname) &&
-      new URLSearchParams(location.search).get("preview") === "1");
+  // Fixture data is available only to the DOM test harness. Public URLs,
+  // including old ?preview=1 bookmarks, always require real sign-in.
+  const preview = forcePreview && globalThis.__HUBPAS_TEST__ === true;
+  if (!preview && new URLSearchParams(location.search).has("preview"))
+    globalThis.history?.replaceState(null, "", location.pathname + location.hash);
   const state = {
     module: "overview",
     resource: "users",

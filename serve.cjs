@@ -15,8 +15,13 @@ const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=
 const port = Number(process.env.PORT || 8080)
 const server = http.createServer((req, res) => {
   let file
-  try { file = decodeURIComponent(new URL(req.url, 'http://localhost').pathname).slice(1) || 'admin.html' }
+  let requested
+  try { requested = new URL(req.url, 'http://localhost'); file = decodeURIComponent(requested.pathname).slice(1) || 'admin.html' }
   catch { res.writeHead(400).end('Bad request'); return }
+  if (file === 'admin.html' && requested.searchParams.has('preview')) {
+    res.writeHead(302, { Location: '/admin.html', 'Cache-Control': 'no-store' }).end()
+    return
+  }
   if (file.startsWith('api/admin/')) { require('./server/admin-api.cjs').handleAdmin(req, res); return }
   if (!allowed.has(file)) { res.writeHead(404).end('Not found'); return }
   fs.readFile(path.join(__dirname, file), (err, data) => {
@@ -28,7 +33,6 @@ const server = http.createServer((req, res) => {
 server.on('error', err => { console.error(err.message); process.exitCode = 1 })
 server.listen(port, '127.0.0.1', () => {
   console.log(`Admin login: http://127.0.0.1:${port}/admin.html`)
-  console.log(`Read-only UI preview: http://127.0.0.1:${port}/admin.html?preview=1`)
   require('./server/warm-local-runtime.cjs').warmLocalRuntime()
     .then(() => console.log('Local Firebase connection ready. Sign-in still verifies each user and their current permissions.'))
     .catch(() => console.error('Local Firebase warm-up unavailable. Sign-in will retry the configured server connection.'))

@@ -55,7 +55,7 @@ Hosting deployment, which could replace unrelated live application files.
 
 For the local portal, install its dependencies (`npm --prefix server ci`) and
 run `node serve.cjs` with authorized server credentials. Open
-`http://127.0.0.1:8080/admin.html`. `?preview=1` shows labelled example data only.
+`http://127.0.0.1:8080/admin.html`. Old `?preview=1` links now open the same authenticated dashboard; website insights never use sample counters.
 
 APK binaries, local credential configuration and local profile indexes are
 excluded from Git. No payment-provider secrets are required by analytics.
