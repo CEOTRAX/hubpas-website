@@ -8,7 +8,7 @@ test('Android download links directly to the published APK without a disabled pl
   assert.equal(link?.tagName,'A');
   const url=new URL(link.href);
   assert.equal(url.hostname,'firebasestorage.googleapis.com');
-  assert.match(url.pathname,/Hubpas-1\.0\.36-cf2fc1ce\.apk$/);
+  assert.match(url.pathname,/Hubpas-1\.0\.36-dc8f02f2\.apk$/);
   assert.equal(url.searchParams.get('alt'),'media');
   assert.match(url.searchParams.get('token'),/^[a-f0-9-]{36}$/);
   assert.doesNotMatch(html,/Android download unavailable/);
