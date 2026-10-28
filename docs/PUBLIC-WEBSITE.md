@@ -14,11 +14,11 @@ database connection required to load the marketing pages.
   wording, contacts and dates are preserved.
 - `server/public-preview.cjs`: a dependency-free local server that serves only
   these public files.
-- `downloads/Hubpas.apk`: the Android release download, hosted separately from
-  Git source. APK binaries are ignored by Git. See `downloads/README.md`.
+- `server/upload-apk.cjs`: publishes verified release APKs to Firebase Storage.
+  APK binaries are ignored by Git. See `docs/ANDROID-DOWNLOAD.md`.
 
-The download section checks the APK URL with a HEAD request and enables the
-Android button only for an available binary. iPhone users open the existing
+The Android button links directly to the current Firebase Storage release.
+iPhone users open the existing
 Hubpas PWA and can follow the Safari Home Screen instructions.
 
 ## Run locally

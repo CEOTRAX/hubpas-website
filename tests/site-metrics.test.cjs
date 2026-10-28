@@ -6,7 +6,11 @@ test('Android download links directly to the published APK without a disabled pl
   const dom=new JSDOM(html);
   const link=dom.window.document.querySelector('[data-android-download]');
   assert.equal(link?.tagName,'A');
-  assert.equal(link.getAttribute('href'),'https://dmap-50136.web.app/downloads/Hubpas.apk');
+  const url=new URL(link.href);
+  assert.equal(url.hostname,'firebasestorage.googleapis.com');
+  assert.match(url.pathname,/Hubpas-1\.0\.36-cf2fc1ce\.apk$/);
+  assert.equal(url.searchParams.get('alt'),'media');
+  assert.match(url.searchParams.get('token'),/^[a-f0-9-]{36}$/);
   assert.doesNotMatch(html,/Android download unavailable/);
   dom.window.close();
 });
