@@ -10,8 +10,9 @@ const { localCliCredentials } = require('./local-cli-credentials.cjs');
 const source = process.argv[2];
 const version = process.argv[3];
 const expectedSha256 = process.argv[4]?.toLowerCase();
-if (!source || !/^\d+\.\d+\.\d+$/.test(version || '') || !/^[a-f0-9]{64}$/.test(expectedSha256 || '')) {
-  console.error('Usage: node server/upload-apk.cjs <release.apk> <version> <expected-sha256>');
+const architecture = process.argv[5] || 'universal';
+if (!source || !/^\d+\.\d+\.\d+$/.test(version || '') || !/^[a-f0-9]{64}$/.test(expectedSha256 || '') || !['universal', 'arm64'].includes(architecture)) {
+  console.error('Usage: node server/upload-apk.cjs <release.apk> <version> <expected-sha256> [universal|arm64]');
   process.exit(2);
 }
 
@@ -32,7 +33,7 @@ async function main() {
   const digest = await hashes(absolute);
   if (digest.sha256 !== expectedSha256) throw new Error('APK SHA-256 does not match the verified release.');
 
-  const objectPath = `downloads/Hubpas-${version}-${digest.sha256.slice(0, 8)}.apk`;
+  const objectPath = `downloads/Hubpas-${version}${architecture === 'arm64' ? '-arm64' : ''}-${digest.sha256.slice(0, 8)}.apk`;
   const storage = new Storage({ projectId: 'dmap-50136', credentials: localCliCredentials() });
   const object = storage.bucket('dmap-50136.firebasestorage.app').file(objectPath);
   const [exists] = await object.exists();
@@ -61,7 +62,7 @@ async function main() {
   const token = metadata.metadata?.firebaseStorageDownloadTokens;
   if (!token || !/^[a-f0-9-]{36}$/i.test(token)) throw new Error('Firebase download token is missing.');
   const url = `https://firebasestorage.googleapis.com/v0/b/dmap-50136.firebasestorage.app/o/${encodeURIComponent(objectPath)}?alt=media&token=${encodeURIComponent(token)}`;
-  console.log(JSON.stringify({ objectPath, size: stat.size, sha256: digest.sha256, url }));
+  console.log(JSON.stringify({ objectPath, architecture, size: stat.size, sha256: digest.sha256, url }));
 }
 
 main().catch(error => { console.error(error.message); process.exitCode = 1; });

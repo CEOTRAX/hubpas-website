@@ -81,6 +81,8 @@ test("authenticated user navigation fetches one summary and only the requested a
                   errors: [],
                   limited: false,
                 }
+              : path === "resource-insights"
+                ? { total: 0, sampleSize: 0, exact: true, facets: [], daily: [], errors: [] }
               : { cards: [], errors: [], coverage: "test", asOf: "test" };
       return { ok: true, json: async () => result };
     },
@@ -101,10 +103,11 @@ test("authenticated user navigation fetches one summary and only the requested a
     calls.length = 0;
     document.getElementById("profile-all-transactions").click();
     await new Promise(setImmediate);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].path, "records");
-    assert.equal(calls[0].params.get("resource"), "walletTransactions");
-    assert.equal(calls[0].params.get("search"), "customer");
+    assert.deepEqual(calls.map((call) => call.path).sort(), ["records", "resource-insights"]);
+    const recordCall = calls.find((call) => call.path === "records");
+    assert.equal(recordCall.params.get("resource"), "walletTransactions");
+    assert.equal(recordCall.params.get("search"), "customer");
+    assert.equal(calls.find((call) => call.path === "resource-insights").params.get("search"), null);
     calls.length = 0;
     await Promise.all([app.api("health"), app.api("health")]);
     assert.equal(calls.length, 1);

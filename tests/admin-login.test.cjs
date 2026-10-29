@@ -82,8 +82,9 @@ test("sign-in shows server failures and retries the same account without needing
   assert.equal(document.getElementById("app").hidden, true);
   assert.match(
     document.getElementById("login-status").textContent,
-    /do not open.*automatically/,
+    /Continue with it, or enter a different account/,
   );
+  assert.equal(document.getElementById("login-continue").hidden, false);
   await form.onsubmit({ preventDefault() {} });
   assert.equal(document.getElementById("login-error").hidden, false);
   assert.match(
@@ -126,6 +127,45 @@ test("sign-in shows server failures and retries the same account without needing
   delete global.location;
 });
 
+test("a saved Firebase account can enter after the server checks its dashboard role", async () => {
+  const dom = new JSDOM(
+    fs.readFileSync(require("node:path").join(__dirname, "../admin.html"), "utf8"),
+    { url: "http://127.0.0.1:8080/admin.html" },
+  );
+  global.document = dom.window.document;
+  global.location = dom.window.location;
+  global.__HUBPAS_TEST__ = true;
+  const { mountDashboard } = await import("../admin-console.mjs");
+  const user = { uid: "owner", getIdToken: async () => "test-token" };
+  let passwordAttempts = 0, sessionReads = 0;
+  await mountDashboard({
+    authLoader: async () => [
+      { initializeApp: () => ({}) },
+      {
+        getAuth: () => ({}),
+        onAuthStateChanged: (_auth, callback) => callback(user),
+        signOut: async () => {},
+        signInWithEmailAndPassword: async () => { passwordAttempts++; throw new Error("Should not be called"); },
+      },
+    ],
+    fetcher: async (url) => {
+      if (url.endsWith("/session")) {
+        sessionReads++;
+        return { ok: true, status: 200, json: async () => ({ uid: "owner", roles: ["super_admin"], resources: ["users"], actions: [], version: "test" }) };
+      }
+      return { ok: true, json: async () => ({ cards: [], errors: [], limited: false, coverage: "test", asOf: "test" }) };
+    },
+  });
+  assert.equal(document.getElementById("app").hidden, true);
+  await document.getElementById("login-continue").onclick();
+  assert.equal(passwordAttempts, 0);
+  assert.equal(sessionReads, 1);
+  assert.equal(document.getElementById("app").hidden, false);
+  dom.window.close();
+  delete global.document;
+  delete global.location;
+});
+
 test("an old preview URL opens real sign-in without sample dashboard data", async () => {
   const dom = new JSDOM(
     fs.readFileSync(require("node:path").join(__dirname, "../admin.html"), "utf8"),
@@ -162,4 +202,42 @@ test("an old preview URL opens real sign-in without sample dashboard data", asyn
   delete global.document;
   delete global.location;
   delete global.history;
+});
+
+test("invalid credentials explain the email requirement and offer a Firebase reset", async () => {
+  const dom = new JSDOM(
+    fs.readFileSync(require("node:path").join(__dirname, "../admin.html"), "utf8"),
+    { url: "http://127.0.0.1:8080/admin.html" },
+  );
+  global.document = dom.window.document;
+  global.location = dom.window.location;
+  global.__HUBPAS_TEST__ = true;
+  const { mountDashboard } = await import("../admin-console.mjs");
+  let resetAddress;
+  await mountDashboard({
+    authLoader: async () => [
+      { initializeApp: () => ({}) },
+      {
+        getAuth: () => ({}),
+        onAuthStateChanged: (_auth, callback) => callback(null),
+        signOut: async () => {},
+        signInWithEmailAndPassword: async () => {
+          throw Object.assign(new Error("Firebase: Error (auth/invalid-credential)."), { code: "auth/invalid-credential" });
+        },
+        sendPasswordResetEmail: async (_auth, email) => { resetAddress = email; },
+      },
+    ],
+    fetcher: () => { throw new Error("No server call expected"); },
+  });
+  document.getElementById("email").value = "owner@example.com";
+  document.getElementById("password").value = "incorrect";
+  await document.getElementById("login-form").onsubmit({ preventDefault() {} });
+  assert.match(document.getElementById("login-error").textContent, /email linked to your Hubpas account/);
+  assert.doesNotMatch(document.getElementById("login-error").textContent, /auth\/invalid-credential/);
+  await document.getElementById("reset-password").onclick();
+  assert.equal(resetAddress, "owner@example.com");
+  assert.match(document.getElementById("login-status").textContent, /password reset instructions/);
+  dom.window.close();
+  delete global.document;
+  delete global.location;
 });

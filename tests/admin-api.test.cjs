@@ -712,3 +712,28 @@ test("overview uses aggregate counts instead of loading operational collections"
       .every((read) => read.cap === 101),
   );
 });
+
+test("resource insights count users exactly, group city and location fields, and enforce roles", async () => {
+  const db = database({
+    "adminRoleAssignments/operator": { active: true, roles: ["finance"] },
+    "users/one": { createdAt: new Date("2026-10-10T12:00:00Z"), city: "Freetown", userPlan: "basic", verified: true },
+    "users/two": { createdAt: new Date("2026-10-11T12:00:00Z"), location: "Bo", userPlan: "pro", subscription: { status: "expired", plan: "pro" }, verified: false },
+  });
+  const result = await request(db, "resource-insights?resource=users&from=2026-10-01&to=2026-10-31");
+  assert.equal(result.status, 200);
+  assert.equal(result.body.total, 2);
+  assert.equal(result.body.verifiedTotal, 1);
+  assert.equal(result.body.sampleSize, 2);
+  assert.deepEqual(
+    result.body.facets.find((facet) => facet.label === "Location").values.map((entry) => entry.label).sort(),
+    ["Bo", "Freetown"],
+  );
+  assert.deepEqual(
+    result.body.facets.find((facet) => facet.label === "Account type").values.map((entry) => [entry.label, entry.count]).sort(),
+    [["Business", 0], ["Free", 1], ["Pro", 1]],
+  );
+  assert.equal(
+    (await request(db, "resource-insights?resource=moderationCases")).status,
+    403,
+  );
+});

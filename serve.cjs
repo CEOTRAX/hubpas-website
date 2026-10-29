@@ -10,7 +10,7 @@ if (fs.existsSync(localConfigPath)) {
   process.env.ADMIN_ACCESS_MANAGEMENT_ENABLED ||= local.accessManagementEnabled === true ? 'true' : 'false'
 }
 
-const allowed = new Set(['index.html', 'admin.html', 'events.html', 'organizer-preview.html', 'styles.css', 'script.js', 'admin-insights.mjs', 'dashboard-schema.mjs', 'admin-console.mjs', 'admin-console.css', 'record-view.mjs'])
+const allowed = new Set(['index.html', 'admin.html', 'events.html', 'organizer-preview.html', 'styles.css', 'script.js', 'admin-insights.mjs', 'dashboard-schema.mjs', 'admin-console.mjs', 'admin-console.css', 'admin-redesign.css', 'record-view.mjs'])
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8' }
 const port = Number(process.env.PORT || 8080)
 const server = http.createServer((req, res) => {

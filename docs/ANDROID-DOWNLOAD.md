@@ -1,16 +1,18 @@
 # Android download
 
-The public Android download is stored in Firebase Storage at `downloads/Hubpas-1.0.36-60a2af16.apk`. The [website download button](https://dmap-50136.web.app/website/#get-hubpas) points to its tokenized Firebase Storage download URL.
+The public Android download is stored in Firebase Storage at `downloads/Hubpas-1.0.36-02b0cd81.apk`. The [website download button](https://dmap-50136.web.app/website/#get-hubpas) points to this universal release. An ARM64-only release is stored separately at `downloads/Hubpas-1.0.36-arm64-c35f13e6.apk` and is not the default website download.
 
 | Release | Value |
 | --- | --- |
 | App version | 1.0.36 (version code 37) |
 | Package | `com.hubpasstudio.hubpas` |
-| APK SHA-256 | `60a2af16773350b96b7013723911efa11e6cfb547fff00c5c3b7f5761dcdc517` |
+| Universal APK SHA-256 | `02b0cd819221b003acc5caaed885d129c2745c6bcc061ebf27470832766e391b` |
+| ARM64 APK SHA-256 | `c35f13e63aa0555a52a6df3be3130c8e831ef20b2126872893d5417bcdd65aa3` |
 | Signing certificate SHA-256 | `166d6ea0ca77c0ed8e9a5702047b363d148d7ed33cc4a1f7d72b2d266e3485bb` |
 | Architectures | ARM64, ARMv7, x86, x86-64 |
-| Storage object size | 193,146,261 bytes |
+| Universal object size | 193,146,073 bytes |
+| ARM64 object size | 70,557,649 bytes |
 
-This is a non-debuggable, universal release build signed with the same Hubpas key as the previous public APK. Firebase Storage serves it as an attachment with the Android package content type. The binary is excluded from Git because it exceeds GitHub's regular file size limit. The earlier Firebase Hosting `/downloads/Hubpas.apk` file remains the prior 1.0.35 release; use the website button for the current APK.
+Both are non-debuggable release builds signed with the same Hubpas key as the previous public APK. Firebase Storage serves them as attachments with the Android package content type. The binaries are excluded from Git because they exceed GitHub's regular file size limit. The earlier Firebase Hosting `/downloads/Hubpas.apk` file remains the prior 1.0.35 release; use the website button for the current universal APK. Both new builds still report version code 37, so stores and update tools that require a higher version code will not treat them as a newer release.
 
-For a later signed release, verify its package, signature, version and supported architectures, then run `node server/upload-apk.cjs <release.apk> <version> <expected-sha256>` with the configured local Firebase account. Publish the returned Storage URL in `index.html` only after checking its download headers and size.
+For a later signed release, verify its package, signature, version and supported architectures, then run `node server/upload-apk.cjs <release.apk> <version> <expected-sha256> [universal|arm64]` with the configured local Firebase account. Publish the universal URL in `index.html` only after checking its download headers and size.

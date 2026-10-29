@@ -6,10 +6,11 @@
     <meta name="description" content="Hubpas production management console" />
     <title>Hubpas Management</title>
     <link rel="stylesheet" href="admin-console.css" />
+    <link rel="stylesheet" href="admin-redesign.css" />
   </head>
   <body>
     <section id="login" class="login-wrap">
-      <div class="brand">hubpas</div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">h</span><span>hubpas</span></div>
       <div class="card">
         <div class="eyebrow">Management console</div>
         <h1>Admin sign in</h1>
@@ -17,21 +18,6 @@
           Use your existing account. Access is verified by the admin server.
         </p>
         <form id="login-form">
-          <label class="field"
-            ><span>Account sign-in method</span
-            ><select id="login-method">
-              <option value="email">Email and account password</option>
-              <option value="phone">Hubpas phone and account password</option>
-            </select></label
-          >
-          <label class="field" id="phone-login-wrap" hidden
-            ><span>Phone number</span
-            ><input
-              type="tel"
-              id="login-phone"
-              placeholder="+232…"
-              autocomplete="tel"
-          /></label>
           <label class="field"
             ><span>Email</span
             ><input
@@ -50,6 +36,9 @@
             Loading sign-in…
           </button>
         </form>
+        <button type="button" id="reset-password" class="login-reset" disabled>
+          Reset password by email
+        </button>
         <p
           id="login-status"
           class="muted small"
@@ -62,6 +51,9 @@
           A wallet PIN is never collected by this dashboard.
         </p>
         <p id="login-error" class="notice error" role="alert" hidden></p>
+        <button type="button" id="login-continue" class="btn-primary" hidden>
+          Continue with saved account
+        </button>
         <button type="button" id="login-signout" hidden>
           Sign out of current account
         </button>
@@ -76,14 +68,16 @@
     </section>
     <div id="app" class="shell" hidden>
       <aside class="sidebar" aria-label="Dashboard navigation">
-        <div class="brand">hubpas</div>
-        <div class="eyebrow">Management console</div>
+        <div class="sidebar-brand">
+          <div class="brand"><span class="brand-mark" aria-hidden="true">h</span><span>hubpas</span></div>
+          <div class="eyebrow">Management workspace</div>
+        </div>
         <nav id="navigation"></nav>
         <div class="sidebar-foot">
+          <div class="sidebar-foot-label">Signed in to Hubpas</div>
           <div id="identity"></div>
-          <div>Firebase · dmap-50136</div>
-          <div>Currency · SLE / leones</div>
-          <div id="version"></div>
+          <div class="sidebar-foot-meta">All dates in UTC · Currency SLE</div>
+          <div id="version" class="sidebar-foot-version"></div>
         </div>
       </aside>
       <main class="content">
@@ -95,10 +89,11 @@
               aria-label="Toggle navigation"
               aria-expanded="false"
             >
-              ☰</button
-            ><span class="eyebrow">Hubpas operations</span>
+            ☰</button
+            ><div class="topbar-location"><span class="eyebrow">Hubpas / Workspace</span><strong id="topbar-current">Dashboard</strong></div>
           </div>
           <div class="topbar-right">
+            <span class="live-indicator"><span aria-hidden="true"></span> Live workspace</span>
             <span id="role" class="role-badge"></span
             ><button type="button" id="signout">Sign out</button>
             <a id="live-signin" href="admin.html" class="btn-primary" hidden
@@ -109,10 +104,11 @@
         <div id="notice" class="notice" role="status" hidden></div>
         <div class="page-head">
           <div>
+            <div class="page-kicker">Workspace overview</div>
             <h1 id="page-title">Overview</h1>
             <p id="page-description" class="muted"></p>
           </div>
-          <button id="refresh" type="button">Refresh data</button>
+          <button id="refresh" type="button">↻ <span>Refresh data</span></button>
         </div>
         <div class="period-bar">
           <label class="field"
@@ -137,6 +133,7 @@
           </div>
           <button id="apply-period" type="button">Apply dates</button
           ><span id="period-label" class="period-label"></span>
+          <div id="resource-tabs" class="resource-tabs" hidden></div>
         </div>
         <section id="overview" aria-label="Platform overview"></section>
         <section id="website-insights" aria-label="Website insights" hidden></section>
@@ -145,15 +142,16 @@
           aria-label="Main account and treasury"
           hidden
         ></section>
+        <section id="module-insights" aria-label="Workspace insights" hidden></section>
         <section id="records" hidden>
           <button id="related-back" type="button" class="breadcrumb" hidden>
             ← Back to parent collection
           </button>
-          <div id="resource-tabs" class="resource-tabs"></div>
           <p id="source-label" class="code muted"></p>
           <p id="workflow-note" class="muted small"></p>
           <section id="event-panel" hidden>
             <div id="event-metrics" class="calendar-metrics"></div>
+            <div id="event-spotlight"></div>
             <div class="two-col">
               <div class="card">
                 <h2>Events by location</h2>
@@ -319,7 +317,7 @@
         <p id="action-notice" class="muted small"></p>
         <div id="detail-actions" class="detail-actions"></div>
         <form id="access-form" class="action-form" hidden>
-          <h3>Dashboard access</h3>
+          <h3>Team portal permissions</h3>
           <p class="muted small">
             These permissions control this management portal. App customer
             roles, subscriptions and wallet access are separate.
@@ -328,7 +326,7 @@
             ><input type="checkbox" id="access-active" /> Allow dashboard
             sign-in</label
           >
-          <h4>Roles</h4>
+          <h4>Choose this team member's role</h4>
           <div id="access-roles" class="permission-grid"></div>
           <h4>Restrict pages and data</h4>
           <p class="small muted">

@@ -354,6 +354,7 @@ async function sample(
   services,
   cap = 200,
   keepSearch = false,
+  projection = null,
 ) {
   const own = new URLSearchParams(params);
   own.set("resource", name);
@@ -370,7 +371,7 @@ async function sample(
     formats.map(async (format) => {
       const built = queryBase(ref, resource, own, format, services, true);
       const snap = await built.query
-        .select(...summaryFields(name, resource))
+        .select(...(projection || summaryFields(name, resource)))
         .limit(cap + 1)
         .get();
       return snap.docs;
@@ -381,16 +382,58 @@ async function sample(
       snaps.flat().map((doc) => [doc.id, { id: doc.id, data: doc.data() }]),
     ).values(),
   ];
-  if (keepSearch)
-    raw.sort(
-      (a, b) =>
-        Date.parse(toDate(b.data[resource.dateField])) -
-          Date.parse(toDate(a.data[resource.dateField])) ||
-        b.id.localeCompare(a.id),
-    );
+  raw.sort(
+    (a, b) =>
+      Date.parse(toDate(b.data[resource.dateField])) -
+        Date.parse(toDate(a.data[resource.dateField])) ||
+      b.id.localeCompare(a.id),
+  );
   return {
     rows: raw.slice(0, cap),
     limited: raw.length > cap || snaps.some((docs) => docs.length > cap),
+  };
+}
+async function resourceInsights(params, actor, services) {
+  const { name, resource, ref } = await resourceFor(params, actor, services);
+  const { insightFieldsFor, resourceSummary } = await import("./shared/admin-insights.mjs");
+  if (resource.parent && !params.get("parent"))
+    fail(400, "Choose a parent record before viewing this breakdown.");
+  if (resource.fixedId) {
+    const snap = await ref.doc(resource.fixedId).get();
+    return {
+      ...resourceSummary(snap.exists ? [{ data: snap.data() }] : [], name, resource.dateField, snap.exists ? 1 : 0),
+      exact: true,
+      errors: [],
+      asOf: new Date().toISOString(),
+    };
+  }
+  const [countResult, sampleResult, verifiedResult] = await Promise.allSettled([
+    countResource(name, params, actor, services),
+    sample(name, params, actor, services, 100, false, insightFieldsFor(name, resource)),
+    name === "users"
+      ? countResource(name, params, actor, services, { verified: true })
+      : Promise.resolve(null),
+  ]);
+  const errors = [countResult, sampleResult, verifiedResult].flatMap((result) =>
+    result.status === "rejected" && result.reason?.status !== 403
+      ? [safeMessage(result.reason)]
+      : [],
+  );
+  const sampled = sampleResult.status === "fulfilled"
+    ? sampleResult.value
+    : { rows: [], limited: false };
+  return {
+    ...resourceSummary(
+      sampled.rows,
+      name,
+      resource.dateField,
+      countResult.status === "fulfilled" ? countResult.value : null,
+      sampled.limited,
+    ),
+    verifiedTotal: verifiedResult.status === "fulfilled" ? verifiedResult.value : null,
+    exact: countResult.status === "fulfilled",
+    errors: [...new Set(errors)],
+    asOf: new Date().toISOString(),
   };
 }
 async function countResource(name, params, actor, services, filters = {}) {
@@ -1154,6 +1197,14 @@ async function handleAdmin(req, res, provided) {
         200,
         await cachedRead(services, actor, path, url.searchParams, 5000, () =>
           records(url.searchParams, actor, services),
+        ),
+      );
+    if (req.method === "GET" && path === "resource-insights")
+      return send(
+        res,
+        200,
+        await cachedRead(services, actor, path, url.searchParams, 30000, () =>
+          resourceInsights(url.searchParams, actor, services),
         ),
       );
     if (req.method === "GET" && path === "record") {

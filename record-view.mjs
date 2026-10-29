@@ -38,7 +38,7 @@ const labels = {
   walletBalance: "Current wallet balance",
   walletHeldBalance: "Held funds",
   accountType: "Account type",
-  userPlan: "Plan",
+  userPlan: "Recorded plan",
   publicOrPrivate: "Visibility",
   verified: "Verified account",
   totalPrice: "Total price",
@@ -277,7 +277,7 @@ export function displayCell(row, key) {
   if (key === "userPlan")
     return readable(
       "plan",
-      row.data.userPlan || row.data.accountType || "basic",
+      row.data.userPlan || row.data.accountType,
     );
   return readable(key, row.data[key]);
 }

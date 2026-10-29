@@ -2,7 +2,7 @@
 // retain the full allowlisted projection through the separate record endpoint.
 const lists = {
   users:
-    "displayName name username email phone userPlan accountType verified walletBalance walletHeldBalance createdAt",
+    "displayName name username email phone city userPlan accountType verified walletBalance walletHeldBalance createdAt",
   wallet: "userId walletBalance walletHeldBalance createdAt updatedAt",
   walletTransactions:
     "userId type amount amountMajor grossAmount feeAmount netAmount status timestamp counterpartyUserId",

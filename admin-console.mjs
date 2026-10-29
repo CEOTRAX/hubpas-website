@@ -1,5 +1,5 @@
 import { MODULES, RESOURCES, ACTIONS, VERSION } from "./dashboard-schema.mjs";
-import { dateRange, leones, eventStats, inRange } from "./admin-insights.mjs";
+import { dateRange, leones, eventStats, inRange, resourceSummary } from "./admin-insights.mjs";
 import {
   columnsFor,
   fieldLabel,
@@ -79,6 +79,7 @@ export function previewData() {
           displayName: "Mariama Kamara",
           username: "mariama",
           email: "m***@example.com",
+          city: "Freetown",
           accountType: "paid",
           userPlan: "pro",
           verified: true,
@@ -93,6 +94,7 @@ export function previewData() {
         data: {
           displayName: "Ibrahim Sesay",
           username: "ibrahim",
+          city: "Bo",
           userPlan: "basic",
           verified: false,
           createdAt: dayDate(5),
@@ -518,6 +520,19 @@ export async function mountDashboard({
         asOf: new Date().toISOString(),
       };
     }
+    if (path === "resource-insights") {
+      const name = params.get("resource"), resource = RESOURCES[name];
+      const rows = (examples[name] || []).filter((row) =>
+        resource.fixedId || inRange(row.data[resource.dateField], demoRange),
+      );
+      return {
+        ...resourceSummary(rows, name, resource.dateField, rows.length, false),
+        verifiedTotal: name === "users" ? rows.filter((row) => row.data.verified === true).length : null,
+        exact: true,
+        errors: [],
+        asOf: new Date().toISOString(),
+      };
+    }
     if (path === "overview")
       return {
         cards: [
@@ -720,6 +735,7 @@ export async function mountDashboard({
           : module.resources.some((resource) =>
               state.session.resources.includes(resource),
             );
+      if (!permitted) return "";
       let heading = "";
       if (module.section !== section) {
         section = module.section;
@@ -730,7 +746,6 @@ export async function mountDashboard({
         '<button class="nav-button" data-module="' +
         module.id +
         '" ' +
-        (!permitted ? "disabled" : "") +
         ' aria-current="' +
         (state.module === module.id ? "page" : "false") +
         '"><span class="nav-icon" aria-hidden="true">' +
@@ -754,8 +769,10 @@ export async function mountDashboard({
       "treasury",
       "health",
       "detail-page",
+      "module-insights",
     ])
-      $(id).hidden = id !== view;
+      $(id).hidden = id !== view && !(id === "module-insights" && view === "records");
+    $("resource-tabs").hidden = view !== "records";
   }
   async function openModule(id, selection = null) {
     pendingReads.forEach((promise) => promise.cancel?.());
@@ -776,10 +793,24 @@ export async function mountDashboard({
     $("mobile-nav").setAttribute("aria-expanded", "false");
     const module = MODULES.find((item) => item.id === id) || MODULES[0];
     $("page-title").textContent = module.label;
-    $("page-description").textContent =
-      id === "overview"
-        ? "Activity for the selected period, with clear sources and accounting definitions."
-        : "Review existing records and make controlled changes when needed.";
+    $("topbar-current").textContent = module.label;
+    const introductions = {
+      overview: ["Your platform at a glance", "A clear view of activity, money and the work that needs attention."],
+      website: ["Audience & growth", "See visits, page views and Android download interest over time."],
+      users: ["People & accounts", "Review customer profiles, app settings, plans and account activity."],
+      team: ["Team access", "See who can use this portal and manage their roles and restrictions."],
+      subscriptions: ["Plans & pricing", "Review subscriptions, pricing and promotion records."],
+      treasury: ["Finance workspace", "Monitor the main account, internal ledger and reconciliation."],
+      wallets: ["Money movement", "Review wallet funding, transfers, withdrawals and orders."],
+      events: ["Event performance", "Monitor events, ticket sales, boosts and the calendar."],
+      venues: ["Places & bookings", "Review venues, spaces and booking requests."],
+      skills: ["Services marketplace", "Review providers, services and bookings."],
+      moderation: ["Trust & support", "Work through moderation and customer support cases."],
+      community: ["Community activity", "Review communication metadata and related requests."],
+      operations: ["Platform operations", "Check service health, webhooks and audit history."],
+    };
+    $("page-description").textContent = introductions[id]?.[1] || "Review records and activity.";
+    document.querySelector(".page-kicker").textContent = introductions[id]?.[0] || "Workspace";
     nav();
     notice(
       preview
@@ -820,6 +851,7 @@ export async function mountDashboard({
     else $("health").hidden = true;
     await Promise.all([
       loadRecords(),
+      loadResourceInsights(),
       id === "events" && !selection ? loadEvents() : Promise.resolve(),
     ]);
   }
@@ -850,6 +882,7 @@ export async function mountDashboard({
             state.cursor = null;
             renderTabs();
             loadRecords();
+            loadResourceInsights();
           }),
       );
     const resource = RESOURCES[state.resource];
@@ -903,6 +936,65 @@ export async function mountDashboard({
     $("record-status").value = "all";
     $("event-panel").hidden =
       state.module !== "events" || state.resource !== "events";
+  }
+  async function loadResourceInsights() {
+    const request = (state.insightsRequest || 0) + 1;
+    state.insightsRequest = request;
+    const resource = state.resource, module = state.module, target = $("module-insights");
+    if (RESOURCES[resource]?.parent && !state.parent) {
+      target.innerHTML = '<div class="card insight-empty">Choose a parent record to see its activity summary.</div>';
+      return;
+    }
+    target.innerHTML = '<div class="loader">Loading workspace insights…</div>';
+    try {
+      const params = rangeParams();
+      params.set("resource", resource);
+      if (state.parent) params.set("parent", state.parent);
+      if (state.nested) params.set("nested", state.nested);
+      const result = await api("resource-insights", params);
+      if (request !== state.insightsRequest || resource !== state.resource || module !== state.module) return;
+      const format = (value) => value == null ? "—" : Number(value).toLocaleString("en-SL");
+      const label = wordsForResource(resource);
+      const mainLabel = resource === "users" ? "New accounts" : "Total records";
+      const cards = [
+        [mainLabel, format(result.total), result.exact ? "Exact count for selected period" : "Count unavailable"],
+        resource === "users"
+          ? ["Verified accounts", format(result.verifiedTotal), result.verifiedTotal == null ? "Count unavailable" : "Exact count for selected period"]
+          : ["Records sampled", format(result.sampleSize), "Latest records used for charts"],
+        [result.facets?.[0]?.label || "Breakdown", result.facets?.[0]?.values?.[0]?.label || "—", result.facets?.[0]?.values?.[0] ? format(result.facets[0].values[0].count) + " in chart sample" : "No categories recorded"],
+      ];
+      const maxDaily = Math.max(1, ...(result.daily || []).map((day) => day.count));
+      const trend = result.daily?.length
+        ? '<div class="insight-trend" role="img" aria-label="Daily activity in the bounded sample">' +
+          result.daily.map((day) => '<div class="insight-day" title="' + escape(day.date + ': ' + day.count) +
+          '"><span style="height:' + Math.max(2, Math.round(day.count / maxDaily * 100)) +
+          '%"></span><small>' + escape(day.date.slice(5)) + '</small></div>').join('') + '</div>'
+        : '<p class="muted">No dated records in this sample.</p>';
+      const facetCards = (result.facets || []).slice(0, 2).map((facet) => {
+        const max = Math.max(1, ...facet.values.map((item) => item.count));
+        return '<div class="card insight-chart-card"><div class="card-heading"><div><div class="eyebrow">' +
+          (resource === "users" && facet.label === "Account type" ? "New accounts in selected period" : "Sample breakdown") + '</div><h3>' +
+          escape(facet.label) + '</h3></div></div><div class="insight-bars">' +
+          facet.values.map((item) => '<div class="insight-bar-row"><span title="' + escape(item.label) + '">' +
+            escape(item.label) + '</span><div class="insight-bar-track"><span style="width:' +
+            Math.round(item.count / max * 100) + '%"></span></div><strong>' +
+            format(item.count) + '</strong></div>').join('') + '</div></div>';
+      });
+      target.innerHTML = '<div class="section-heading"><div><div class="eyebrow">Workspace insights</div><h2>' +
+        escape(label) + ' at a glance</h2></div><span class="section-caption">Selected period · UTC</span></div><div class="metric-grid module-insight-kpis">' +
+        cards.map(([title, value, note]) => '<div class="card insight-kpi"><div class="metric-label">' + escape(title) +
+          '</div><div class="metric-value">' + escape(value) + '</div><div class="metric-definition">' + escape(note) + '</div></div>').join('') +
+        '</div><div class="insight-visual-grid"><div class="card insight-chart-card"><div class="card-heading"><div><div class="eyebrow">Activity</div><h3>Recent daily activity</h3></div></div>' + trend + '</div>' +
+        facetCards.join('') + '</div><p class="insight-coverage">' +
+        (result.exact ? 'Total uses a database count. ' : 'Exact total is unavailable. ') +
+        'Charts use up to ' + format(result.sampleSize) + ' recent records' +
+        (result.limited ? ' from a larger matching set' : '') +
+        '; they are directional, not a full distribution. For account types, legacy Basic plans count as Pro and expired plans count as Free. Table search does not change these period charts.</p>' +
+        (result.errors?.length ? '<p class="notice">Some insights are unavailable: ' + escape(result.errors.join(' · ')) + '</p>' : '');
+    } catch (error) {
+      if (request === state.insightsRequest)
+        target.innerHTML = '<div class="notice error">Workspace insights could not load: ' + escape(error.message) + '</div>';
+    }
   }
   async function loadRecords(cursor = null) {
     if (cursor === null) state.currentCursor = null;
@@ -1207,6 +1299,9 @@ export async function mountDashboard({
         '</div><p class="small muted">' +
         escape(note) +
         "</p></div>";
+      const setting = (label, value) =>
+        '<div class="account-setting"><span>' + escape(label) +
+        '</span><strong>' + escape(value) + '</strong></div>';
       const f = result.finance;
       $("user-profile-view").innerHTML =
         '<div class="user-layout"><aside class="user-sidebar card"><div class="user-avatar">' +
@@ -1220,16 +1315,16 @@ export async function mountDashboard({
         "</p>" +
         item("Email", d.email) +
         item("Phone", d.phone) +
-        item("Plan", readable("plan", d.userPlan || d.accountType || "Basic")) +
+        item("Recorded plan", readable("plan", d.userPlan || d.accountType)) +
         item("Joined", readable("createdAt", d.createdAt)) +
         item("Account status", result.authStatus) +
         (result.financialAccess
           ? item("Current wallet balance", leones(d.walletBalance ?? NaN)) +
             item("Held funds", leones(d.walletHeldBalance ?? NaN))
           : '<p class="muted">Wallet details are restricted for your role.</p>') +
-        '<button id="profile-permissions" ' +
+        '<div class="account-control-shortcuts"><div class="eyebrow">Account controls</div><button id="profile-settings">App account settings →</button><button id="profile-permissions" ' +
         (!(preview || state.session.canManageAccess) ? "disabled" : "") +
-        '>Dashboard permissions</button></aside><section><div class="profile-toolbar"><h2>Wallet & activity</h2><div class="profile-periods">' +
+        '>Team portal permissions →</button></div></aside><section><div class="profile-toolbar"><h2>Wallet & activity</h2><div class="profile-periods">' +
         [
           ["today", "Daily"],
           ["last-7", "Weekly"],
@@ -1282,7 +1377,16 @@ export async function mountDashboard({
               "Confirmed principal · excludes charges",
             )
           : "") +
-        "</div>" +
+        '</div><section id="app-account-settings" class="card app-settings-card"><div class="card-heading"><div><div class="eyebrow">Customer app</div><h3>App account settings</h3></div></div><div class="account-settings-grid">' +
+        setting("Account status", result.authStatus) +
+        setting("Verification", d.verified === true ? "Verified" : d.verified === false ? "Not verified" : "Not recorded") +
+        setting("Current plan", readable("plan", d.userPlan || d.accountType || "Not recorded")) +
+        setting("Publishing limit", d.adminLimits?.maxPublishedEventsTotal == null ? "Default" : String(d.adminLimits.maxPublishedEventsTotal)) +
+        '</div><p class="muted small">These settings apply to the customer app. Team portal access is managed separately.</p>' +
+        (state.session.actions.some((action) => action.startsWith("user."))
+          ? '<button id="jump-account-actions" type="button">View available account actions →</button>'
+          : '<p class="small muted">Changes are not enabled for your role or this server.</p>') +
+        '</section>' +
         (result.limited
           ? '<p class="notice">Amounts summarize up to 50 recent wallet entries. Narrow the period for complete figures. Counts use server aggregations.</p>'
           : "") +
@@ -1330,6 +1434,11 @@ export async function mountDashboard({
           behavior: "smooth",
         });
       };
+      $("profile-settings").onclick = () =>
+        $("app-account-settings").scrollIntoView?.({ block: "start", behavior: "smooth" });
+      if ($("jump-account-actions"))
+        $("jump-account-actions").onclick = () =>
+          $("detail-actions").scrollIntoView?.({ block: "start", behavior: "smooth" });
       const related = async (module, resource) => {
         $("dialog").hidden = true;
         $("period").value = "all";
@@ -1486,6 +1595,7 @@ export async function mountDashboard({
       $("access-status").textContent = result.notice;
       state.access.version = result.version;
       await loadRecords();
+      await loadResourceInsights();
     } catch (error) {
       $("access-status").textContent = error.message;
     } finally {
@@ -1592,6 +1702,7 @@ export async function mountDashboard({
                 state.detail?.data.name ||
                 "Related records");
             loadRecords();
+            loadResourceInsights();
           }),
       );
   }
@@ -1669,6 +1780,7 @@ export async function mountDashboard({
       $("dialog").hidden = true;
       notice("Change saved with an audit record.", "success");
       await loadRecords();
+      await loadResourceInsights();
     } catch (error) {
       $("action-error").textContent = error.message;
     } finally {
@@ -1708,76 +1820,66 @@ export async function mountDashboard({
     try {
       const result = await api("overview", rangeParams());
       if (request !== state.request) return;
+      const number = (value) =>
+        value == null || !Number.isFinite(Number(value))
+          ? "—"
+          : Number(value).toLocaleString("en-SL");
+      const share = (part, total) =>
+        Number.isFinite(Number(part)) && Number(total) > 0
+          ? Math.max(0, Math.min(100, Math.round((Number(part) / Number(total)) * 100)))
+          : null;
+      const cardByLabel = (label) => result.cards.find((card) => card.label === label);
+      const registrations = cardByLabel("New registrations")?.value;
+      const verified = cardByLabel("Verified registrations")?.value;
+      const tickets = cardByLabel("Tickets created")?.value ?? cardByLabel("Tickets issued")?.value;
+      const redeemed = cardByLabel("Redeemed tickets")?.value;
+      const verifiedShare = share(verified, registrations);
+      const redeemedShare = share(redeemed, tickets);
+      const visual = (label, value, total, percent, tone, note) =>
+        '<div class="progress-story"><div class="progress-ring ' + tone + '" style="--progress:' +
+        (percent ?? 0) +
+        '%" role="img" aria-label="' + escape(label + ': ' + (percent == null ? 'unavailable' : percent + '%')) +
+        '"><div><strong>' + (percent == null ? '—' : percent + '%') +
+        '</strong><span>of total</span></div></div><div class="progress-copy"><div class="eyebrow">' +
+        escape(label) + '</div><h3>' + number(value) + ' <span>/ ' + number(total) +
+        '</span></h3><p class="muted small">' + escape(note) + '</p></div></div>';
+      const quickLinks = [
+        ["events", "events", "Events & tickets", "See the calendar and ticket activity", "↗"],
+        ["wallets", "walletTransactions", "Wallet operations", "Review funding and transfers", "⇄"],
+        ["team", "adminRoleAssignments", "Team permissions", "Manage portal access", "♙"],
+        ["moderation", "moderationCases", "Moderation queue", "Review cases and support", "⚑"],
+      ].filter(([, resource]) => state.session.resources.includes(resource));
       $("overview").innerHTML =
-        '<div id="finance-overview"></div><h2 class="overview-section-title">Platform activity</h2><div class="metric-grid">' +
-        result.cards
-          .map(
-            (card) =>
-              '<div class="card"><div class="metric-label">' +
-              escape(card.label) +
-              '</div><div class="metric-value">' +
-              (card.value == null ? "—" : Number(card.value).toLocaleString()) +
-              '</div><div class="metric-definition">' +
-              escape(card.definition) +
-              "</div></div>",
-          )
-          .join("") +
-        '</div><div class="notice' +
-        (result.limited ? "" : " success") +
-        '">' +
-        escape(result.coverage) +
-        '</div><div class="two-col"><div class="card"><h2>Financial activity · SLE</h2><p class="muted small">Successful recorded operations. Refunds and reversal entries are separate.</p>' +
-        (result.finance
-          ? Object.entries(result.finance)
-              .map(
-                ([key, value]) =>
-                  '<div class="list-line"><span>' +
-                  escape(titleCase(key)) +
-                  "</span><strong>" +
-                  (/pending|failed|stale|records|Count|Transactions|reversed|partial/.test(
-                    key,
-                  )
-                    ? value
-                    : leones(value)) +
-                  "</strong></div>",
-              )
-              .join("")
-          : '<p class="muted">Financial metrics unavailable for this role or backend.</p>') +
-        (result.customerLiabilities
-          ? '<h3>Customer wallets · current snapshot</h3><div class="list-line"><span>Wallet liabilities</span><strong>' +
-            leones(result.customerLiabilities.walletBalanceMajor) +
-            '</strong></div><div class="list-line"><span>Held funds</span><strong>' +
-            leones(result.customerLiabilities.heldBalanceMajor) +
-            '</strong></div><p class="small muted">' +
-            escape(result.customerLiabilities.source) +
-            " Snapshot " +
-            escape(result.customerLiabilities.asOf || result.asOf) +
-            "; cached up to 60 seconds, independent of the period filter.</p>"
-          : "") +
-        '</div><div class="card"><h2>Operational alerts</h2>' +
-        (result.errors.length
-          ? result.errors
-              .map(
-                (error) =>
-                  '<p class="notice error">' +
-                  escape(error.resource) +
-                  ": " +
-                  escape(error.message) +
-                  "</p>",
-              )
-              .join("")
-          : '<p class="muted">No source errors in the current read.</p>') +
-        '<p class="definition-list">' +
-        escape(result.definitions?.finance || "") +
-        '</p><button id="overview-events">Explore events →</button><button id="overview-wallets">Review wallet operations →</button></div></div><p class="muted small">As of ' +
-        escape(result.asOf) +
-        " · overview cached up to 30 seconds · backend version " +
-        escape(state.session.version) +
-        " · app deployment " +
-        escape(state.session.appDeploymentStatus) +
-        "</p>";
-      $("overview-events").onclick = () => openModule("events");
-      $("overview-wallets").onclick = () => openModule("wallets");
+        '<div class="dashboard-welcome"><div><div class="eyebrow">Management dashboard</div><h2>See what matters across Hubpas.</h2><p>Monitor the platform, spot changes and move straight to your team’s work.</p></div><div class="welcome-orbit" aria-hidden="true"><span></span><span></span><span></span></div></div>' +
+        '<div class="section-heading"><div><div class="eyebrow">Selected period</div><h2>Platform activity</h2></div><span class="section-caption">Live server counts</span></div><div class="metric-grid overview-kpis">' +
+        result.cards.map((card, index) =>
+          '<div class="card metric-card metric-tone-' + index % 4 + '"><div class="metric-top"><span class="metric-icon" aria-hidden="true">' +
+          ["◉", "✓", "◇", "▣", "↗", "⌂"][index % 6] +
+          '</span><span class="metric-arrow" aria-hidden="true">↗</span></div><div class="metric-label">' +
+          escape(card.label) + '</div><div class="metric-value">' + number(card.value) +
+          '</div><div class="metric-definition">' + escape(card.definition) + '</div></div>',
+        ).join('') + '</div>' +
+        '<div class="dashboard-main-grid"><div class="card visual-card"><div class="card-heading"><div><div class="eyebrow">Conversion snapshot</div><h2>People & tickets</h2></div><span class="card-icon" aria-hidden="true">◔</span></div>' +
+        visual('Verified registrations', verified, registrations, verifiedShare, 'blue', 'Verified accounts among new registrations in this period.') +
+        visual('Tickets redeemed', redeemed, tickets, redeemedShare, 'pink', 'Tickets created in this period that are currently marked used.') +
+        '<p class="chart-note">These are shares of recorded counts, not a time-series forecast.</p></div>' +
+        '<div class="card workspace-card"><div class="card-heading"><div><div class="eyebrow">Move to a workspace</div><h2>Team shortcuts</h2></div><span class="card-icon" aria-hidden="true">↗</span></div>' +
+        (quickLinks.length ? quickLinks.map(([id, , label, description, icon]) =>
+          '<button class="workspace-link" data-shortcut="' + id + '"><span class="workspace-link-icon" aria-hidden="true">' + icon + '</span><span><strong>' + label + '</strong><small>' + description + '</small></span><span aria-hidden="true">→</span></button>',
+        ).join('') : '<p class="muted">Your role has no additional workspaces assigned.</p>') +
+        '</div></div>' +
+        '<div id="finance-overview"></div>' +
+        '<div class="dashboard-bottom-grid"><div class="card"><div class="card-heading"><div><div class="eyebrow">Data coverage</div><h2>About this view</h2></div></div><p class="muted">' + escape(result.coverage) +
+        '</p><p class="small muted">Updated ' + escape(result.asOf) +
+        ' · Counts are cached for up to 30 seconds.</p></div><div class="card"><div class="card-heading"><div><div class="eyebrow">Attention</div><h2>Source status</h2></div><span class="status-dot ' +
+        (result.errors.length ? 'attention' : '') + '"></span></div>' +
+        (result.errors.length ? result.errors.map((error) =>
+          '<p class="notice error">' + escape(error.resource) + ': ' + escape(error.message) + '</p>',
+        ).join('') : '<p class="muted">No source errors in the current read.</p>') +
+        '</div></div>';
+      $("overview").querySelectorAll("[data-shortcut]").forEach((button) =>
+        (button.onclick = () => openModule(button.dataset.shortcut)),
+      );
       renderFinanceOverview(result, request, treasuryResult);
     } catch (error) {
       if (request === state.request)
@@ -1806,8 +1908,23 @@ export async function mountDashboard({
       const earnings = entries.length
         ? entries.reduce((sum, [, v]) => sum + v, 0)
         : null;
+      const earnedCategories = [
+        ["withdrawalFees", "Withdrawal charges"],
+        ["ticketSalesFees", "Ticket commission"],
+        ["raffleFees", "Raffle commission"],
+        ["subscriptionRevenue", "Subscriptions"],
+        ["boostRevenue", "Event promotion"],
+      ];
+      const maxEarned = Math.max(1, ...earnedCategories.map(([key]) => Math.max(0, Number(counters[key]) || 0)));
+      const earnedChart =
+        '<div class="finance-chart" role="img" aria-label="Stored all-time earnings by category">' +
+        earnedCategories.map(([key, label]) =>
+          '<div class="finance-chart-row"><span>' + label + '</span><div class="finance-chart-track"><span style="width:' +
+          Math.round(Math.max(0, Number(counters[key]) || 0) / maxEarned * 100) +
+          '%"></span></div><strong>' + leones(counters[key] ?? NaN) + '</strong></div>',
+        ).join('') + '</div>';
       $("finance-overview").innerHTML =
-        '<h2 class="overview-section-title">Finance at a glance · SLE</h2><div class="metric-grid finance-primary">' +
+        '<div class="section-heading"><div><div class="eyebrow">Finance workspace</div><h2>Money at a glance</h2></div><span class="section-caption">SLE · balances and recorded activity</span></div><div class="metric-grid finance-primary">' +
         card(
           "Main account · available balance",
           leones(treasury?.provider?.availableMajor ?? NaN),
@@ -1849,23 +1966,7 @@ export async function mountDashboard({
           "Selected period · bounded summary" +
             (summary.limited ? " · incomplete" : ""),
         ) +
-        '</div><div class="two-col finance-breakdown"><div class="card"><h3>What we have earned · stored counters</h3>' +
-        [
-          ["withdrawalFees", "Withdrawal charges"],
-          ["ticketSalesFees", "Ticket commission"],
-          ["raffleFees", "Raffle commission"],
-          ["subscriptionRevenue", "Subscription revenue / fees"],
-          ["boostRevenue", "Event promotion revenue"],
-        ]
-          .map(
-            ([key, label]) =>
-              '<div class="list-line"><span>' +
-              label +
-              "</span><strong>" +
-              leones(counters[key] ?? NaN) +
-              "</strong></div>",
-          )
-          .join("") +
+        '</div><div class="two-col finance-breakdown"><div class="card"><div class="card-heading"><div><div class="eyebrow">All-time recorded income</div><h3>Where earnings come from</h3></div></div>' + earnedChart +
         '<p class="small muted">Counters are all-time accounting records, not a period profit calculation. Provider fees are not counted as our income.</p></div><div class="card"><h3>Transactions in the selected period</h3>' +
         [
           ["successfulTransactions", "Confirmed entries"],
@@ -1960,6 +2061,16 @@ export async function mountDashboard({
   }
   function renderTreasury(result) {
     const provider = result.provider;
+    const balanceRows = [
+      ["Provider available", provider.availableMajor],
+      ["Internal treasury ledger", result.ledger.balanceMajor],
+    ].filter(([, value]) => Number.isFinite(value) && value >= 0);
+    const balanceScale = Math.max(1, ...balanceRows.map(([, value]) => value));
+    const balanceChart = '<div class="card treasury-comparison"><div class="card-heading"><div><div class="eyebrow">Balance overview</div><h3>Two accounting views</h3></div></div><div class="insight-bars">' +
+      balanceRows.map(([label, value]) => '<div class="insight-bar-row"><span>' + escape(label) +
+        '</span><div class="insight-bar-track"><span style="width:' + Math.round(value / balanceScale * 100) +
+        '%"></span></div><strong>' + leones(value) + '</strong></div>').join('') +
+      '</div><p class="small muted">Balances share a scale for comparison. They represent different sources and are not added together.</p></div>';
     const delta =
       !result.stale &&
       provider.availableMajor != null &&
@@ -1978,7 +2089,7 @@ export async function mountDashboard({
               : "UNAVAILABLE · not verified")) +
       '</div><h2>Available balance</h2><div class="metric-value">' +
       leones(provider.availableMajor ?? NaN) +
-      '</div><div class="account-fields"><span class="code">' +
+      '</div><details class="technical-info"><summary>Provider account details</summary><div class="account-fields"><span class="code">' +
       escape(provider.verifiedAccountId || "Account not verified") +
       "</span><span>" +
       escape(provider.accountName || "") +
@@ -1986,7 +2097,7 @@ export async function mountDashboard({
       escape(provider.uvan || "Not returned") +
       '</span><span class="small muted">SLE · raw minor units: ' +
       escape(provider.availableMinor ?? "Unavailable") +
-      '</span></div><p class="small ' +
+      '</span></div></details><p class="small ' +
       (result.stale ? "stale" : "muted") +
       '">Last successful provider refresh: ' +
       escape(
@@ -1996,9 +2107,9 @@ export async function mountDashboard({
       ) +
       '</p><label class="field"><span>Main account selector · verified accounts in configured Space</span><select id="main-account-select"><option>Loading verified accounts…</option></select></label><p id="account-selector-note" class="muted small">Selection changes inspection only. Payment routing is not modified.</p><div id="selected-account"></div></div><div class="card"><div class="eyebrow">Firestore · internal accounting ledger</div><h2>Treasury ledger</h2><div class="metric-value">' +
       leones(result.ledger.balanceMajor ?? NaN) +
-      '</div><p class="code">platform/treasury.balance · major SLE units</p><p class="muted">This is not the authoritative provider balance or a complete revenue total.</p><div class="list-line"><span>Provider minus ledger</span><strong>' +
+      '</div><details class="technical-info"><summary>Ledger source</summary><p class="code">platform/treasury.balance · major SLE units</p></details><p class="muted">This is not the authoritative provider balance or a complete revenue total.</p><div class="list-line"><span>Provider minus ledger</span><strong>' +
       leones(delta ?? NaN) +
-      '</strong></div><p class="muted small">Discrepancies can reflect held funds, timing or missing ledger entries. They do not authorise a balance correction.</p><p class="muted">User/host/venue wallets and held funds are separate liabilities; overlapping platform mirrors are never added here.</p></div></div><div class="card" style="margin-top:16px"><h2>Configuration & reconciliation</h2><div id="treasury-error" class="stale"></div>' +
+      '</strong></div><p class="muted small">Discrepancies can reflect held funds, timing or missing ledger entries. They do not authorise a balance correction.</p><p class="muted">User/host/venue wallets and held funds are separate liabilities; overlapping platform mirrors are never added here.</p></div></div>' + balanceChart + '<div class="card" style="margin-top:16px"><h2>Configuration & reconciliation</h2><div id="treasury-error" class="stale"></div>' +
       (result.configuration.warnings.length
         ? result.configuration.warnings
             .map(
@@ -2141,6 +2252,39 @@ export async function mountDashboard({
           "</div></div>",
       )
       .join("");
+    const upcoming = rows
+      .filter((row) =>
+        !["cancelled", "canceled", "rejected"].includes(String(row.data.status).toLowerCase()) &&
+        new Date(row.data.dateTime) >= new Date(),
+      )
+      .sort((a, b) => new Date(a.data.dateTime) - new Date(b.data.dateTime))
+      .slice(0, 3);
+    const featured = upcoming.length
+      ? upcoming
+      : rows
+          .filter((row) => !["cancelled", "canceled", "rejected"].includes(String(row.data.status).toLowerCase()))
+          .sort((a, b) => new Date(b.data.dateTime) - new Date(a.data.dateTime))
+          .slice(0, 3);
+    $("event-spotlight").innerHTML =
+      '<div class="section-heading"><div><div class="eyebrow">' + (upcoming.length ? 'Coming up' : 'Recently held') +
+      '</div><h2>' + (upcoming.length ? 'Events to watch' : 'Recent events') +
+      '</h2></div><span class="section-caption">From the current event sample</span></div><div class="event-spotlight-grid">' +
+      (featured.length ? featured.map((row, index) =>
+        '<button class="event-spotlight-card event-tone-' + index + '" data-spotlight="' +
+        escape(row.id) + '"><span class="event-spotlight-art" aria-hidden="true"><span>✦</span></span><span class="event-spotlight-body"><small>' +
+        escape(row.data.category || "Event") + '</small><strong>' +
+        escape(row.data.title || "Untitled event") + '</strong><span>' +
+        escape(readable("dateTime", row.data.dateTime)) +
+        (row.data.location ? ' · ' + escape(row.data.location) : '') +
+        '</span></span><span class="event-spotlight-arrow" aria-hidden="true">↗</span></button>',
+      ).join('') : '<div class="card event-empty">No events in this selection. Try a wider period.</div>') +
+      '</div>';
+    $("event-spotlight").querySelectorAll("[data-spotlight]").forEach((button) =>
+      (button.onclick = () => {
+        state.resource = "events";
+        openDetail(featured.find((row) => row.id === button.dataset.spotlight));
+      }),
+    );
     const breakdown = (pairs) =>
       pairs
         .map(
@@ -2258,6 +2402,7 @@ export async function mountDashboard({
     state.eventDay = null;
     loadRecords();
     loadEvents();
+    loadResourceInsights();
   }
   $("calendar-month").value = currentMonth();
   $("calendar-prev").onclick = () => calendarMonth(-1);
@@ -2287,6 +2432,7 @@ export async function mountDashboard({
       else {
         await Promise.all([
           loadRecords(),
+          loadResourceInsights(),
           state.module === "events" ? loadEvents() : Promise.resolve(),
         ]);
       }
@@ -2308,6 +2454,7 @@ export async function mountDashboard({
     state.nested = $("nested-id").value.trim() || null;
     state.previous = [];
     loadRecords();
+    loadResourceInsights();
   };
   $("next").onclick = () => {
     state.previous.push(state.currentCursor || null);
@@ -2338,6 +2485,7 @@ export async function mountDashboard({
     $("related-back").hidden = true;
     renderTabs();
     loadRecords();
+    loadResourceInsights();
   };
   $("close-detail").onclick = () => {
     $("dialog").hidden = true;
@@ -2394,16 +2542,23 @@ export async function mountDashboard({
     state.session = session;
     $("login").hidden = true;
     $("app").hidden = false;
+    const roleNames = {
+      super_admin: "Owner",
+      finance: "Finance",
+      operations: "Events & operations",
+      support: "Support",
+      analyst: "Analyst",
+    };
     $("role").textContent =
-      (preview ? "Preview · " : "") + state.session.roles.join(", ");
+      (preview ? "Preview · " : "") +
+      state.session.roles.map((role) => roleNames[role] || titleCase(role)).join(", ");
     $("identity").textContent = preview
       ? "Local design preview"
-      : state.session.uid;
+      : state.user?.displayName || state.user?.email || "Team member";
     $("version").textContent = VERSION;
     $("signout").hidden = preview;
     $("live-signin").hidden = !preview;
-    if (!preview)
-      $("identity").textContent = "Live Firestore · " + state.session.uid;
+    document.querySelector(".live-indicator").hidden = preview;
     await openModule("overview");
   }
   if (preview) {
@@ -2415,7 +2570,7 @@ export async function mountDashboard({
         getAuth,
         onAuthStateChanged,
         signInWithEmailAndPassword,
-        signInWithCustomToken,
+        sendPasswordResetEmail,
         signOut,
       },
     ] = await (authLoader
@@ -2437,6 +2592,13 @@ export async function mountDashboard({
     let explicitLogin = false;
     let retryDashboard = false;
     const signInLabel = () => (retryDashboard ? "Retry dashboard" : "Sign in");
+    const authMessage = (error) => {
+      if (["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"].includes(error?.code))
+        return "Firebase could not verify that email and password. Use the email linked to your Hubpas account, or reset its password below.";
+      if (error?.code === "auth/too-many-requests")
+        return "Firebase has temporarily limited sign-in attempts. Wait a little before trying again or reset your password.";
+      return error?.message || "Firebase sign-in could not complete.";
+    };
     const showLoginFailure = (error, signedIn = !!state.user) => {
       retryDashboard = signedIn && !!state.user && error.status !== 401;
       $("app").hidden = true;
@@ -2444,12 +2606,13 @@ export async function mountDashboard({
       $("login-error").textContent = signedIn
         ? "Signed in successfully, but dashboard access could not open. " +
           error.message
-        : error.message;
+        : authMessage(error);
       $("login-error").hidden = false;
       $("login-status").textContent = signedIn
         ? "Firebase sign-in succeeded. Dashboard connection failed."
         : "Sign-in did not complete.";
       $("login-signout").hidden = !state.user;
+      $("login-continue").hidden = !state.user;
     };
     const connectUser = (user) => {
       if (connecting) return connecting;
@@ -2473,17 +2636,7 @@ export async function mountDashboard({
         });
       return connecting;
     };
-    $("login-method").onchange = () => {
-      retryDashboard = false;
-      $("login-submit").textContent = signInLabel();
-      const phone = $("login-method").value === "phone";
-      $("phone-login-wrap").hidden = !phone;
-      $("email").closest("label").hidden = phone;
-      $("email").required = !phone;
-      $("login-phone").required = phone;
-    };
-    $("login-method").onchange();
-    for (const id of ["email", "login-phone", "password"]) {
+    for (const id of ["email", "password"]) {
       $(id).addEventListener("input", () => {
         retryDashboard = false;
         if (!connecting) $("login-submit").textContent = signInLabel();
@@ -2491,6 +2644,43 @@ export async function mountDashboard({
     }
     $("login-submit").disabled = false;
     $("login-submit").textContent = "Sign in";
+    $("login-continue").onclick = async () => {
+      if (!state.user) return;
+      explicitLogin = true;
+      $("login-error").hidden = true;
+      $("login-continue").disabled = true;
+      try {
+        await connectUser(state.user);
+      } catch {
+        // connectUser presents the server's access error on the sign-in screen.
+      } finally {
+        $("login-continue").disabled = false;
+      }
+    };
+    $("reset-password").disabled = false;
+    $("reset-password").onclick = async () => {
+      const email = $("email");
+      if (!email.value.trim() || !email.checkValidity()) {
+        email.reportValidity();
+        email.focus();
+        return;
+      }
+      $("reset-password").disabled = true;
+      $("login-error").hidden = true;
+      $("login-status").textContent = "Requesting a Firebase password reset email…";
+      try {
+        await sendPasswordResetEmail(state.auth, email.value.trim());
+        $("login-status").textContent = "If this email belongs to a Hubpas account, Firebase has sent password reset instructions. Check your inbox and spam folder.";
+      } catch (error) {
+        $("login-error").textContent = error?.code === "auth/invalid-email"
+          ? "Enter a valid account email to request a reset."
+          : "Password reset could not be requested. " + authMessage(error);
+        $("login-error").hidden = false;
+        $("login-status").textContent = "Password reset did not complete.";
+      } finally {
+        $("reset-password").disabled = false;
+      }
+    };
     $("login-status").textContent = "Ready to sign in to Hubpas.";
     $("login-form").onsubmit = async (event) => {
       event.preventDefault();
@@ -2507,28 +2697,11 @@ export async function mountDashboard({
           await connectUser(state.user);
           return;
         }
-        let credential;
-        if ($("login-method").value === "phone") {
-          const { getFunctions, httpsCallable } =
-            await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-functions.js");
-          const login = httpsCallable(
-            getFunctions(firebase),
-            "loginWithPhoneAndPassword",
-          );
-          const result = await login({
-            phone: $("login-phone").value.trim(),
-            password: $("password").value,
-          });
-          credential = await signInWithCustomToken(
-            state.auth,
-            result.data.customToken,
-          );
-        } else
-          credential = await signInWithEmailAndPassword(
-            state.auth,
-            $("email").value.trim(),
-            $("password").value,
-          );
+        const credential = await signInWithEmailAndPassword(
+          state.auth,
+          $("email").value.trim(),
+          $("password").value,
+        );
         signedIn = true;
         await connectUser(credential.user);
       } catch (error) {
@@ -2544,6 +2717,8 @@ export async function mountDashboard({
       state.user = user;
       if (!user) {
         retryDashboard = false;
+        $("login-continue").hidden = true;
+        $("login-signout").hidden = true;
         pendingReads.forEach((promise) => promise.cancel?.());
         pendingReads.clear();
         explicitLogin = false;
@@ -2568,9 +2743,10 @@ export async function mountDashboard({
         $("app").hidden = true;
         $("login").hidden = false;
         $("login-error").hidden = true;
+        $("login-continue").hidden = false;
         $("login-signout").hidden = false;
         $("login-status").textContent =
-          "Enter your account details and select Sign in. Saved accounts do not open the dashboard automatically.";
+          "A Hubpas account is saved in this browser. Continue with it, or enter a different account below.";
         return;
       }
       try {
