@@ -1,0 +1,10 @@
+{
+  "functions": [
+    {
+      "source": "server",
+      "codebase": "hubpas-admin",
+      "ignore": ["node_modules", ".git", "local-config.json", "*.log"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ]
+}

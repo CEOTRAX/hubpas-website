@@ -1,5 +1,6 @@
 server/node_modules/
 server/local-config.json
+server/.env.dmap-50136
 server/*.log
 .admin-prototype-backup.html
 firebase-debug.log
