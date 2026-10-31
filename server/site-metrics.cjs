@@ -1,7 +1,7 @@
 // Aggregate counters only. No event log, visitor IDs, IPs or user profiles in storage.
 const crypto = require('node:crypto');
 const DATABASE_URL = 'https://dmap-50136-site-metrics.firebaseio.com';
-const ORIGINS = new Set(['https://dmap-50136.web.app', 'https://dmap-50136.firebaseapp.com']);
+const ORIGINS = new Set(['https://dmap-50136.web.app', 'https://dmap-50136.firebaseapp.com', 'https://www.hubpas.com', 'https://hubpas.com']);
 const PAGES = new Set(['website', 'privacy']);
 const salt = crypto.randomBytes(32), rate = new Map(), seen = new Map();
 function bad(status, message) { return Object.assign(new Error(message), {status}); }

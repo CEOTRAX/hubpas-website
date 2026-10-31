@@ -9,8 +9,8 @@ document.querySelector('[data-print]')?.addEventListener('click',()=>window.prin
 
 // Anonymous daily totals only. Local previews, opted-out browsers and the app
 // itself are excluded. No URL parameters, referrers or visitor IDs are sent.
-const trackProduction = location.protocol === 'https:' && ['dmap-50136.web.app','dmap-50136.firebaseapp.com'].includes(location.hostname) && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true;
-const trackedPage = location.pathname === '/privacy.html' ? 'privacy' : /^\/website(?:\/(?:index\.html)?)?$/.test(location.pathname) ? 'website' : null;
+const trackProduction = location.protocol === 'https:' && ['dmap-50136.web.app','dmap-50136.firebaseapp.com','www.hubpas.com','hubpas.com'].includes(location.hostname) && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true;
+const trackedPage = location.pathname === '/privacy.html' ? 'privacy' : /^(?:\/(?:index\.html)?|\/website(?:\/(?:index\.html)?)?)$/.test(location.pathname) ? 'website' : null;
 if (trackProduction && trackedPage) {
   const sendCount = (type, visit = false) => {
     const data=JSON.stringify({type,page:trackedPage,id:crypto.randomUUID(),visit});

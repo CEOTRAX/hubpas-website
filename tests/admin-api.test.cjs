@@ -663,6 +663,51 @@ test("user finance page shows current ledger balances and only that user period 
   assert.equal(blocked.body.profile.data.walletHeldBalance, undefined);
 });
 
+test("customer detail joins Auth contact and private address only for account staff", async () => {
+  const db = database({
+    "adminRoleAssignments/operator": { active: true, roles: ["super_admin"] },
+    "users/target": {
+      name: "Customer",
+      location: "Western Area Urban",
+      phone: "+23212345952",
+      backupEmail: "backup@example.com",
+    },
+    "users/target/private/address": {
+      streetAddress: "12 Main Street",
+      region: "Western Area",
+      city: "Freetown",
+      country: "Sierra Leone",
+      postalCode: "001",
+      secretToken: "never-expose",
+    },
+  });
+  const auth = {
+    ...services(db).auth,
+    getUser: async () => ({
+      email: "customer@example.com",
+      disabled: false,
+      metadata: {
+        creationTime: "2026-01-02T00:00:00.000Z",
+        lastSignInTime: "2026-10-30T10:00:00.000Z",
+      },
+    }),
+  };
+  const owner = await request(db, "user-summary?id=target", "GET", undefined, { auth });
+  assert.equal(owner.status, 200);
+  assert.equal(owner.body.profileDetails.email, "customer@example.com");
+  assert.equal(owner.body.profileDetails.streetAddress, "12 Main Street");
+  assert.equal(owner.body.profileDetails.region, "Western Area");
+  assert.equal(owner.body.profileDetails.joinedAt, "2026-01-02T00:00:00.000Z");
+  assert.equal(owner.body.profileDetails.lastSignInAt, "2026-10-30T10:00:00.000Z");
+  assert.ok(!JSON.stringify(owner.body).includes("never-expose"));
+  db.docs.get("adminRoleAssignments/operator").roles = ["analyst"];
+  const analyst = await request(db, "user-summary?id=target", "GET", undefined, { auth });
+  assert.equal(analyst.status, 200);
+  assert.equal(analyst.body.profileDetails.email, "c***@example.com");
+  assert.equal(analyst.body.profileDetails.streetAddress, null);
+  assert.equal(analyst.body.profileDetails.contactAccess, false);
+});
+
 test("cached lists still enforce current permissions and token revocation on every request", async () => {
   const db = database({
     "adminRoleAssignments/operator": { active: true, roles: ["finance"] },

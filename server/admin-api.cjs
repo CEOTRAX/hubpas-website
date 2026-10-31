@@ -645,21 +645,24 @@ async function userSummary(params, actor, services) {
   const { resource, ref } = await resourceFor(own, actor, services);
   // All of these are independent reads for the same authorised customer.
   const profilePromise = ref.doc(id).get();
+  const contactAccess = actor.roles.some((role) =>
+    ["super_admin", "support"].includes(role),
+  );
+  const identityPromise =
+    typeof services.auth.getUser === "function"
+      ? storeFor(services)
+          .get("auth-profile:" + id, 30000, () => services.auth.getUser(id))
+          .then((user) => ({ user }), (error) => ({ error }))
+      : Promise.resolve({ user: null });
+  const addressPromise = contactAccess
+    ? services.db
+        .doc("users/" + id + "/private/address")
+        .get()
+        .then((snap) => ({ snap }), (error) => ({ error }))
+    : Promise.resolve({ snap: null });
   const financial =
     actor.roles.some((role) => ["super_admin", "finance"].includes(role)) &&
     !actor.deniedResources?.includes("wallet");
-  const statusPromise =
-    id === actor.uid
-      ? Promise.resolve("Active")
-      : storeFor(services).get("auth-status:" + id, 30000, async () => {
-          try {
-            return (await services.auth.getUser(id)).disabled
-              ? "Suspended"
-              : "Active";
-          } catch {
-            return "Not available";
-          }
-        });
   const countsPromise = Promise.allSettled(
     ["walletTransactions", "tickets"].map((name) => {
       const p = new URLSearchParams(params);
@@ -687,6 +690,34 @@ async function userSummary(params, actor, services) {
   );
   profile.version = fingerprint(profile.data);
   profile.source = ref.path + "/" + id;
+  const [identity, address] = await Promise.all([
+    identityPromise,
+    addressPromise,
+  ]);
+  const authUser = identity.user;
+  const raw = snap.data();
+  const addressData = address.snap?.exists ? address.snap.data() : {};
+  const textField = (value, limit = 180) =>
+    typeof value === "string" && value.trim()
+      ? value.trim().slice(0, limit)
+      : null;
+  const contact = (value, key) =>
+    contactAccess ? textField(value, 254) : sanitize(value, actor.roles, key);
+  const profileDetails = {
+    contactAccess,
+    email: contact(authUser?.email || raw.email, "email"),
+    backupEmail: contactAccess ? textField(raw.backupEmail, 254) : null,
+    phone: contact(authUser?.phoneNumber || raw.phone, "phone"),
+    joinedAt: profile.data.createdAt || authUser?.metadata?.creationTime || null,
+    lastSignInAt: authUser?.metadata?.lastSignInTime || null,
+    streetAddress: contactAccess
+      ? textField(addressData.streetAddress || raw.address)
+      : null,
+    city: contactAccess ? textField(addressData.city, 100) : null,
+    region: contactAccess ? textField(addressData.region, 100) : null,
+    postalCode: contactAccess ? textField(addressData.postalCode, 24) : null,
+    country: contactAccess ? textField(addressData.country, 80) : null,
+  };
   if (!financial)
     for (const key of [
       "walletBalance",
@@ -714,7 +745,9 @@ async function userSummary(params, actor, services) {
     counts[1].status === "fulfilled"
       ? { count: counts[1].value, limited: false }
       : null;
-  const authStatus = await statusPromise;
+  const authStatus = authUser
+    ? authUser.disabled ? "Suspended" : "Active"
+    : id === actor.uid ? "Active" : "Not available";
   const finance =
     financial && sources[0].status === "fulfilled"
       ? financialSummary(rows)
@@ -725,6 +758,7 @@ async function userSummary(params, actor, services) {
   }
   return {
     profile,
+    profileDetails,
     authStatus,
     finance,
     transactions,
@@ -736,6 +770,12 @@ async function userSummary(params, actor, services) {
       ),
     summaryLimit: 50,
     errors: [
+      ...(identity.error
+        ? [{ source: "Account identity", message: safeMessage(identity.error) }]
+        : []),
+      ...(address.error
+        ? [{ source: "Personal address", message: safeMessage(address.error) }]
+        : []),
       ...sources.flatMap((source, i) =>
         source.status === "rejected"
           ? [

@@ -16,7 +16,11 @@ Owners can restrict staff using the `websiteInsights` dashboard resource.
   cannot prove a complete file transfer, installation or active app usage.
 - Clicks per 100 visits: an interest indicator, not a unique-user conversion rate.
 
-Collection begins with this rollout. Old traffic is not backfilled. Browser
+The public `www.hubpas.com` homepage and privacy page send the same aggregate
+events as the Firebase-hosted `/website/` copy. Vercel forwards
+`/api/site-metrics` to the metrics function; the receiver accepts only these
+known production origins. Collection begins for each site when its tracking
+route is live. Old traffic is not backfilled. Browser
 tracking opt-outs, blockers and network failures can reduce measured traffic;
 blocked session storage can also result in repeated session counts. Common bots,
 fast double clicks and retried request IDs are filtered on a best-effort basis.
@@ -50,7 +54,8 @@ firebase deploy --config firebase.metrics.json --only functions:hubpas-website-m
 
 The build copies the shared server counter module into the function bundle.
 Public website publication preserves the live application's manifest and adds
-only `/api/site-metrics` ahead of catch-all rewrites. Do not run a full root
+only `/api/site-metrics` ahead of catch-all rewrites. The Vercel site uses the
+external rewrite in `vercel.json`. Do not run a full root
 Hosting deployment, which could replace unrelated live application files.
 
 For the local portal, install its dependencies (`npm --prefix server ci`) and

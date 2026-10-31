@@ -30,10 +30,11 @@ test('atomic daily and lifetime increments use server UTC, not client dates or t
 test('public ingestion accepts only allowed-origin bounded events and deduplicates retries',async()=>{
   let writes=0;const body=event();const write=async()=>writes++;
   assert.equal(await ingest(body,{},write),204);assert.equal(await ingest(body,{},write),204);assert.equal(writes,1);
+  assert.equal(await ingest(event(),{headers:{origin:'https://www.hubpas.com','user-agent':'Browser tests'}},write),204);assert.equal(writes,2);
   assert.equal(await ingest(event(),{headers:{origin:'https://attacker.example'}},write),403);
   assert.equal(await ingest(event(),{method:'GET'},write),405);
   assert.equal(await ingest({...event(),page:'users/private-data'}, {},write),400);
-  assert.equal(await ingest('x'.repeat(1500),{},write),413);assert.equal(writes,1);
+  assert.equal(await ingest('x'.repeat(1500),{},write),413);assert.equal(writes,2);
 });
 test('bot requests are ignored; failed counter updates can be retried without double-counting',async()=>{
   let writes=0;assert.equal(await ingest(event(),{headers:{origin:'https://dmap-50136.web.app','user-agent':'TestCrawler'}},async()=>writes++),204);assert.equal(writes,0);
@@ -78,5 +79,6 @@ test('browser tracking counts one visible view and download click, excluding loc
     const results=await Promise.all(messages.map(async b=>JSON.parse(await b.text())));dom.window.close();return results;
   }
   const events=await browser('https://dmap-50136.web.app/website/');assert.deepEqual(events.map(e=>e.type),['pageview','androidDownload']);assert.equal(events[0].visit,true);assert.deepEqual(Object.keys(events[0]).sort(),['id','page','type','visit']);
+  const publicEvents=await browser('https://www.hubpas.com/');assert.deepEqual(publicEvents.map(e=>e.type),['pageview','androidDownload']);
   assert.equal((await browser('http://127.0.0.1:8081/website/')).length,0);assert.equal((await browser('https://dmap-50136.web.app/website/',true)).length,0);assert.equal((await browser('https://dmap-50136.web.app/auth/email')).length,0);
 });

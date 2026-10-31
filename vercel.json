@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/site-metrics",
+      "destination": "https://us-central1-dmap-50136.cloudfunctions.net/hubpasSiteMetrics"
+    },
+    {
       "source": "/api/admin/:path*",
       "destination": "https://us-central1-dmap-50136.cloudfunctions.net/hubpasAdminApi/api/admin/:path*"
     }

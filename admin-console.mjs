@@ -1280,6 +1280,7 @@ export async function mountDashboard({
       )
         return;
       const d = result.profile.data,
+        p = result.profileDetails || {},
         name = d.displayName || d.name || d.username || "Customer";
       state.detail = result.profile;
       $("detail-actions")
@@ -1313,10 +1314,11 @@ export async function mountDashboard({
           readable("accountType", d.accountType || d.userPlan || "Customer"),
         ) +
         "</p>" +
-        item("Email", d.email) +
-        item("Phone", d.phone) +
+        item("Email", p.email || d.email) +
+        item("Phone", p.phone || d.phone) +
+        item("City / district", d.location) +
         item("Recorded plan", readable("plan", d.userPlan || d.accountType)) +
-        item("Joined", readable("createdAt", d.createdAt)) +
+        item("Joined", readable("createdAt", p.joinedAt || d.createdAt)) +
         item("Account status", result.authStatus) +
         (result.financialAccess
           ? item("Current wallet balance", leones(d.walletBalance ?? NaN)) +
@@ -1377,7 +1379,19 @@ export async function mountDashboard({
               "Confirmed principal · excludes charges",
             )
           : "") +
-        '</div><section id="app-account-settings" class="card app-settings-card"><div class="card-heading"><div><div class="eyebrow">Customer app</div><h3>App account settings</h3></div></div><div class="account-settings-grid">' +
+        '</div><section class="card app-settings-card profile-details-card"><div class="card-heading"><div><div class="eyebrow">Customer profile</div><h3>Contact & address</h3></div></div><div class="account-settings-grid">' +
+        setting("Sign-in email", p.email || d.email || "Not recorded") +
+        setting("Backup email", p.contactAccess ? p.backupEmail || "Not recorded" : "Restricted for this role") +
+        setting("Phone", p.phone || d.phone || "Not recorded") +
+        setting("City / district", d.location || "Not recorded") +
+        setting("Street address", p.contactAccess ? p.streetAddress || "Not recorded" : "Restricted for this role") +
+        setting("Address city", p.contactAccess ? p.city || "Not recorded" : "Restricted for this role") +
+        setting("Region", p.contactAccess ? p.region || "Not recorded" : "Restricted for this role") +
+        setting("Postal code", p.contactAccess ? p.postalCode || "Not recorded" : "Restricted for this role") +
+        setting("Country", p.contactAccess ? p.country || "Not recorded" : "Restricted for this role") +
+        setting("Username", d.username || "Not recorded") +
+        setting("Last sign-in", readable("createdAt", p.lastSignInAt)) +
+        '</div><p class="muted small">Sign-in details come from Firebase Authentication. The personal address comes from the customer’s private app address record. Blank fields have not been supplied by the customer.</p></section><section id="app-account-settings" class="card app-settings-card"><div class="card-heading"><div><div class="eyebrow">Customer app</div><h3>App account settings</h3></div></div><div class="account-settings-grid">' +
         setting("Account status", result.authStatus) +
         setting("Verification", d.verified === true ? "Verified" : d.verified === false ? "Not verified" : "Not recorded") +
         setting("Current plan", readable("plan", d.userPlan || d.accountType || "Not recorded")) +
