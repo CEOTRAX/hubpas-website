@@ -46,6 +46,7 @@ async function main() {
     const token = crypto.randomUUID();
     await pipeline(fs.createReadStream(absolute), object.createWriteStream({
       resumable: true,
+      chunkSize: 8 * 1024 * 1024,
       validation: 'md5',
       preconditionOpts: { ifGenerationMatch: 0 },
       metadata: {
