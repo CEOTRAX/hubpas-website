@@ -701,6 +701,10 @@ async function userSummary(params, actor, services) {
     typeof value === "string" && value.trim()
       ? value.trim().slice(0, limit)
       : null;
+  const authDate = (value) => {
+    const date = new Date(value || "");
+    return Number.isFinite(+date) ? date.toISOString() : null;
+  };
   const contact = (value, key) =>
     contactAccess ? textField(value, 254) : sanitize(value, actor.roles, key);
   const profileDetails = {
@@ -708,8 +712,9 @@ async function userSummary(params, actor, services) {
     email: contact(authUser?.email || raw.email, "email"),
     backupEmail: contactAccess ? textField(raw.backupEmail, 254) : null,
     phone: contact(authUser?.phoneNumber || raw.phone, "phone"),
-    joinedAt: profile.data.createdAt || authUser?.metadata?.creationTime || null,
-    lastSignInAt: authUser?.metadata?.lastSignInTime || null,
+    joinedAt:
+      profile.data.createdAt || authDate(authUser?.metadata?.creationTime),
+    lastSignInAt: authDate(authUser?.metadata?.lastSignInTime),
     streetAddress: contactAccess
       ? textField(addressData.streetAddress || raw.address)
       : null,
