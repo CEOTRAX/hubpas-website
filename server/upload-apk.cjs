@@ -11,8 +11,8 @@ const source = process.argv[2];
 const version = process.argv[3];
 const expectedSha256 = process.argv[4]?.toLowerCase();
 const architecture = process.argv[5] || 'universal';
-if (!source || !/^\d+\.\d+\.\d+$/.test(version || '') || !/^[a-f0-9]{64}$/.test(expectedSha256 || '') || !['universal', 'arm64'].includes(architecture)) {
-  console.error('Usage: node server/upload-apk.cjs <release.apk> <version> <expected-sha256> [universal|arm64]');
+if (!source || !/^\d+\.\d+\.\d+$/.test(version || '') || !/^[a-f0-9]{64}$/.test(expectedSha256 || '') || !['universal', 'arm64', 'armv7'].includes(architecture)) {
+  console.error('Usage: node server/upload-apk.cjs <release.apk> <version> <expected-sha256> [universal|arm64|armv7]');
   process.exit(2);
 }
 
@@ -33,7 +33,7 @@ async function main() {
   const digest = await hashes(absolute);
   if (digest.sha256 !== expectedSha256) throw new Error('APK SHA-256 does not match the verified release.');
 
-  const objectPath = `downloads/Hubpas-${version}${architecture === 'arm64' ? '-arm64' : ''}-${digest.sha256.slice(0, 8)}.apk`;
+  const objectPath = `downloads/Hubpas-${version}${architecture === 'universal' ? '' : `-${architecture}`}-${digest.sha256.slice(0, 8)}.apk`;
   const storage = new Storage({ projectId: 'dmap-50136', credentials: localCliCredentials() });
   const object = storage.bucket('dmap-50136.firebasestorage.app').file(objectPath);
   const [exists] = await object.exists();
@@ -51,7 +51,7 @@ async function main() {
       preconditionOpts: { ifGenerationMatch: 0 },
       metadata: {
         contentType: 'application/vnd.android.package-archive',
-        contentDisposition: 'attachment; filename="Hubpas.apk"',
+        contentDisposition: `attachment; filename="Hubpas-${version}${architecture === 'universal' ? '' : `-${architecture}`}.apk"`,
         cacheControl: 'public, max-age=31536000, immutable',
         metadata: { firebaseStorageDownloadTokens: token, sha256: digest.sha256 },
       },
