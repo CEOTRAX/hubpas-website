@@ -8,4 +8,5 @@ deployed-functions-inspection.json
 downloads/*.apk
 site-functions/node_modules/
 site-functions/site-metrics.cjs
+site-functions/featured-events.cjs
 server/user-profile-index.json

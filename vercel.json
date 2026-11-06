@@ -22,6 +22,10 @@
       "destination": "https://us-central1-dmap-50136.cloudfunctions.net/hubpasSiteMetrics"
     },
     {
+      "source": "/api/featured-events",
+      "destination": "https://us-central1-dmap-50136.cloudfunctions.net/hubpasFeaturedEvents"
+    },
+    {
       "source": "/api/admin/:path*",
       "destination": "https://us-central1-dmap-50136.cloudfunctions.net/hubpasAdminApi/api/admin/:path*"
     }

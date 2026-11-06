@@ -1,16 +1,18 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {handleSiteMetrics,parseEvent,countersFor,range,readWebsiteInsights}=require('../server/site-metrics.cjs');
-test('Android download links directly to the published APK without a disabled placeholder',()=>{
+test('Android download defaults to the new ARM64 APK and offers ARMv7',()=>{
   const fs=require('node:fs'),path=require('node:path'),{JSDOM}=require('../server/node_modules/jsdom');
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const dom=new JSDOM(html);
-  const link=dom.window.document.querySelector('[data-android-download]');
-  assert.equal(link?.tagName,'A');
-  const url=new URL(link.href);
+  const links=[...dom.window.document.querySelectorAll('[data-android-download]')];
+  assert.equal(links.length,2);
+  assert.equal(links[0]?.tagName,'A');
+  const url=new URL(links[0].href);
   assert.equal(url.hostname,'firebasestorage.googleapis.com');
-  assert.match(url.pathname,/Hubpas-1\.0\.36-6431d426\.apk$/);
+  assert.match(url.pathname,/Hubpas-1\.0\.36-arm64-b9bd4664\.apk$/);
   assert.equal(url.searchParams.get('alt'),'media');
   assert.match(url.searchParams.get('token'),/^[a-f0-9-]{36}$/);
+  assert.match(new URL(links[1].href).pathname,/Hubpas-1\.0\.36-armv7-31e62538\.apk$/);
   assert.doesNotMatch(html,/Android download unavailable/);
   dom.window.close();
 });

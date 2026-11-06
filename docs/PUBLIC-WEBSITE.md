@@ -1,15 +1,17 @@
 # Hubpas public website
 
-A responsive black and dark-blue website built around **Your pass to what’s happening.** It introduces
-Hubpas events, communities, tickets and wallet features. The
-access-pass artwork is illustrative CSS, with no image-generation service or
-database connection required to load the marketing pages.
+A responsive black website with a short introduction, live upcoming public events,
+and app download choices. Event cards are projected from Firestore by the
+`hubpasFeaturedEvents` public function; draft, private, removed and past events
+are excluded. The page still renders when the event feed is temporarily unavailable.
 
 ## Files
 
 - `index.html`: public homepage.
-- `hubpas-site.css`: dark theme, responsive layout and print styles.
+- `hubpas-home.css`: homepage layout and dark theme.
+- `hubpas-site.css`: privacy page styles and print styles.
 - `hubpas-site.js`: accessible mobile navigation, current year and policy printing.
+- `home-events.js`: renders public event cards from `/api/featured-events`.
 - `privacy.html`: the supplied privacy policy with section navigation. Policy
   wording, contacts and dates are preserved.
 - `server/public-preview.cjs`: a dependency-free local server that serves only
@@ -17,7 +19,8 @@ database connection required to load the marketing pages.
 - `server/upload-apk.cjs`: publishes verified release APKs to Firebase Storage.
   APK binaries are ignored by Git. See `docs/ANDROID-DOWNLOAD.md`.
 
-The Android button links directly to the current Firebase Storage release.
+The default Android button links to the current ARM64 release; an ARMv7 link is
+available for older 32-bit phones.
 iPhone users open the existing
 Hubpas PWA and can follow the Safari Home Screen instructions.
 
