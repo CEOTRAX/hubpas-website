@@ -89,8 +89,9 @@ function renderEvent(event) {
     image.src = event.hostPhoto;
     image.alt = '';
     image.referrerPolicy = 'no-referrer';
-    image.onerror = () => image.remove();
-    document.querySelector('#host-avatar').append(image);
+    const avatar = document.querySelector('#host-avatar');
+    image.onerror = () => { avatar.replaceChildren(document.createTextNode('✳')); };
+    avatar.replaceChildren(image);
   }
   if (!event.chatEnabled) setText('#conversation-copy', 'Join Hubpas to keep up with this event and connect with the host.');
   const tickets = Array.isArray(event.tickets) ? event.tickets : [];
