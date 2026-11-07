@@ -82,7 +82,7 @@ function runtime() {
 }
 async function providerGet(path) {
   if (
-    !/^\/(financial-accounts|payouts|internal-transfers)(\/[A-Za-z0-9-]+)?(\?withBalance=true)?$/.test(
+    !/^\/(financial-accounts|payouts|internal-transfers|checkout-sessions)(\/[A-Za-z0-9-]+)?(\?withBalance=true)?$/.test(
       path,
     )
   )
@@ -107,4 +107,19 @@ async function providerGet(path) {
     ? body.result
     : { ...body.result, serverEnvironment: credentials.environment };
 }
-module.exports = { runtime, providerGet };
+async function providerCreateCheckout(body, idempotencyKey) {
+  if (!/^treasuryfund-[0-9a-f-]{36}$/i.test(idempotencyKey || '')) throw new Error('Invalid checkout request key.');
+  const credentials = await require('./monime-credentials.cjs').monimeCredentials(runtime());
+  const response = await fetch('https://api.monime.io/v1/checkout-sessions', {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + credentials.token, 'Monime-Space-Id': credentials.space,
+      'Monime-Version': process.env.MONIME_VERSION || 'caph.2025-08-23',
+      'Idempotency-Key': idempotencyKey, 'Content-Type': 'application/json'},
+    body: JSON.stringify(body), redirect: 'error', signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error('Provider checkout unavailable (' + response.status + ').');
+  const data = await response.json();
+  if (!data.success || !data.result) throw new Error('Invalid provider checkout response.');
+  return data.result;
+}
+module.exports = { runtime, providerGet, providerCreateCheckout };

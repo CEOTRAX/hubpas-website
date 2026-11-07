@@ -2044,6 +2044,7 @@ export async function mountDashboard({
       }
       state.treasury = result;
       renderTreasury(result);
+      if (!preview && state.session.roles.includes('super_admin') && !state.session.deniedActions?.includes('treasury.fund')) loadTreasuryFunding();
       try {
         const accounts = await api("accounts");
         if (state.session !== session || state.module !== "treasury") return;
@@ -2073,6 +2074,32 @@ export async function mountDashboard({
           '<div class="notice error">' + escape(error.message) + "</div>";
     }
   }
+  async function loadTreasuryFunding() {
+    const target = $('funding-transactions');
+    if (!target) return;
+    try {
+      const selectedId = new URLSearchParams(location.search).get('funding');
+      const response = await api('treasury-funding');
+      if (!target.isConnected) return;
+      const rows = response.transactions || [];
+      target.innerHTML = '<h3>Funding transactions</h3>' + (rows.length
+        ? rows.map(row => '<div class="list-line"><span><strong>' + leones(row.amountMinor / 100) + '</strong> · ' + escape(row.method === 'momo' ? 'Mobile money' : 'Card') +
+            '<br><small class="muted">' + escape(row.id) + '</small></span><span>' + escape(row.status) +
+            (row.status === 'pending' && row.checkoutUrl ? ' · <a href="' + escape(row.checkoutUrl) + '">Continue checkout ↗</a>' : '') + '</span></div>').join('')
+        : '<p class="muted small">No main account funding requests yet.</p>');
+      if (selectedId) {
+        const selected = rows.find(row => row.id === selectedId);
+        const message = $('funding-message');
+        if (message) message.textContent = selected?.status === 'completed'
+          ? 'Monime confirmed the payment. The transaction is recorded below.'
+          : selected ? 'Payment status: ' + selected.status + '. Refresh this page to check again.'
+            : 'Payment return received. Refresh funding transactions to verify its status.';
+        history.replaceState(null, '', '/admin.html');
+      }
+    } catch (error) {
+      if (target.isConnected) target.textContent = error.message;
+    }
+  }
   function renderTreasury(result) {
     const provider = result.provider;
     const balanceRows = [
@@ -2091,6 +2118,14 @@ export async function mountDashboard({
       result.ledger.balanceMajor != null
         ? provider.availableMajor - result.ledger.balanceMajor
         : null;
+    const fundingMarkup = !preview && state.session.roles.includes('super_admin') && !state.session.deniedResources?.includes('treasury') && !state.session.deniedActions?.includes('treasury.fund')
+      ? '<div class="card treasury-funding"><div class="card-heading"><div><div class="eyebrow">MAIN ACCOUNT FUNDING</div><h2>Add funds</h2></div></div>' +
+        '<p class="muted">Pay by mobile money or card through Monime. Funds go to the verified main financial account. A transaction records the request and confirmed outcome.</p>' +
+        '<form id="treasury-funding-form"><div class="funding-fields"><label class="field"><span>Amount (Le)</span><input id="funding-amount" type="text" inputmode="decimal" placeholder="100.00" required></label>' +
+        '<label class="field"><span>Payment method</span><select id="funding-method"><option value="momo">Mobile money</option><option value="card">Card</option></select></label></div>' +
+        '<button class="primary" type="submit"' + (!result.stale && provider.verifiedAccountId ? '' : ' disabled') + '>Continue to secure payment ↗</button></form>' +
+        '<p class="muted small">Payment is completed on Monime. Processing fees may affect the settled balance. No customer wallet or internal treasury ledger is credited by this action.</p>' +
+        '<p id="funding-message" class="small" role="status"></p><div id="funding-transactions"><p class="muted small">Loading funding transactions…</p></div><button id="funding-refresh" type="button">Check transaction status</button></div>' : '';
     $("treasury").innerHTML =
       '<div class="finance-grid"><div class="card"><div class="eyebrow">' +
       (preview
@@ -2123,7 +2158,7 @@ export async function mountDashboard({
       leones(result.ledger.balanceMajor ?? NaN) +
       '</div><details class="technical-info"><summary>Ledger source</summary><p class="code">platform/treasury.balance · major SLE units</p></details><p class="muted">This is not the authoritative provider balance or a complete revenue total.</p><div class="list-line"><span>Provider minus ledger</span><strong>' +
       leones(delta ?? NaN) +
-      '</strong></div><p class="muted small">Discrepancies can reflect held funds, timing or missing ledger entries. They do not authorise a balance correction.</p><p class="muted">User/host/venue wallets and held funds are separate liabilities; overlapping platform mirrors are never added here.</p></div></div>' + balanceChart + '<div class="card" style="margin-top:16px"><h2>Configuration & reconciliation</h2><div id="treasury-error" class="stale"></div>' +
+      '</strong></div><p class="muted small">Discrepancies can reflect held funds, timing or missing ledger entries. They do not authorise a balance correction.</p><p class="muted">User/host/venue wallets and held funds are separate liabilities; overlapping platform mirrors are never added here.</p></div></div>' + balanceChart + fundingMarkup + '<div class="card" style="margin-top:16px"><h2>Configuration & reconciliation</h2><div id="treasury-error" class="stale"></div>' +
       (result.configuration.warnings.length
         ? result.configuration.warnings
             .map(
@@ -2162,6 +2197,26 @@ export async function mountDashboard({
         )
         .join("") +
       '<p class="small muted">Retries, refunds, payment routing changes and held-fund releases require an approved server reconciliation workflow.</p></div>';
+    const fundingForm = $('treasury-funding-form');
+    if ($('funding-refresh')) $('funding-refresh').onclick = loadTreasuryFunding;
+    if (fundingForm) fundingForm.onsubmit = async event => {
+      event.preventDefault();
+      const button = fundingForm.querySelector('button');
+      const message = $('funding-message');
+      button.disabled = true;
+      message.textContent = 'Preparing secure checkout…';
+      try {
+        const transaction = await api('treasury-funding', new URLSearchParams(), 'POST', {
+          requestId: crypto.randomUUID(), amount: $('funding-amount').value.trim(), method: $('funding-method').value,
+        });
+        if (!transaction.checkoutUrl) throw new Error('Checkout link is unavailable. Review the funding transaction before trying again.');
+        location.assign(transaction.checkoutUrl);
+      } catch (error) {
+        message.textContent = error.message;
+        button.disabled = false;
+        loadTreasuryFunding();
+      }
+    };
     $("main-account-select").onchange = async () => {
       const id = $("main-account-select").value;
       if (!id) {
@@ -2573,7 +2628,7 @@ export async function mountDashboard({
     $("signout").hidden = preview;
     $("live-signin").hidden = !preview;
     document.querySelector(".live-indicator").hidden = preview;
-    await openModule("overview");
+    await openModule(!preview && new URLSearchParams(location.search).has('funding') ? 'treasury' : 'overview');
   }
   if (preview) {
     await enter();

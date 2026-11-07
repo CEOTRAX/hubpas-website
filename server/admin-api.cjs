@@ -8,7 +8,7 @@ const {
   fingerprint,
   financialSummary,
 } = require("./admin-policy.cjs");
-const { runtime, providerGet } = require("./admin-runtime.cjs");
+const { runtime, providerGet, providerCreateCheckout } = require("./admin-runtime.cjs");
 const { getTreasury } = require("./treasury-service.cjs");
 const { getAccess, setAccess } = require("./dashboard-access.cjs");
 const { enrichRecords } = require("./record-identities.cjs");
@@ -1215,6 +1215,7 @@ async function handleAdmin(req, res, provided) {
             : [],
         appDeploymentStatus: "unverified",
         deniedResources: actor.deniedResources,
+        deniedActions: actor.deniedActions,
         canManageAccess: actor.roles.includes("super_admin"),
         accessManagementEnabled:
           process.env.ADMIN_ACCESS_MANAGEMENT_ENABLED === "true",
@@ -1333,6 +1334,15 @@ async function handleAdmin(req, res, provided) {
           }),
       );
       return send(res, 200, result);
+    }
+    if (path === 'treasury-funding' && req.method === 'GET') {
+      const funding = require('./treasury-funding.cjs');
+      return send(res, 200, await funding.listFunding(actor, services, readProvider, url.searchParams.get('id')));
+    }
+    if (path === 'treasury-funding' && req.method === 'POST') {
+      const funding = require('./treasury-funding.cjs');
+      return send(res, 200, await funding.startFunding(await bodyFrom(req), actor, services,
+        readProvider, services.providerCreateCheckout || providerCreateCheckout));
     }
     if (req.method === "GET" && path === "accounts") {
       allowResource(actor, "treasury");
