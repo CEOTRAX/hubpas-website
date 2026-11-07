@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {projectEvents, readFeaturedEvents} = require('../server/featured-events.cjs');
+const {projectEvents, publicEvent, readFeaturedEvents, featuredEventsHandler} = require('../server/featured-events.cjs');
 
 const now = Date.parse('2026-11-06T12:00:00Z');
 const record = (id, changes = {}) => ({id, data: () => ({
@@ -43,4 +43,48 @@ test('query reads bounded upcoming records and orders cards by date', async () =
   const events = await readFeaturedEvents(db, now);
   assert.deepEqual(events.map(event => event.id), ['earlier','later']);
   assert.ok(calls.some(call => call[0] === 'limit' && call[1] <= 100));
+});
+
+test('event detail exposes public content and enabled access only', () => {
+  const event = publicEvent(record('detail', {
+    description: 'Live music\nFood and drinks', hostName: 'The host', hostId: 'secret-host-id',
+    fullAddress: 'The venue', chatEnabled: true, privateChatMessages: ['secret message'],
+    ticketTiers: [
+      {name: 'General admission', type: 'ticket', price: 75, quantity: 100, sold: 5},
+      {name: 'Table for four', type: 'table', price: 300, quantity: 10, sold: 10},
+    ],
+    donationTiers: [{name: 'Supporter', amount: 50}],
+    interactiveFeatures: {ticketsEnabled: true, tablesEnabled: false, donationsEnabled: true},
+  }), now);
+  assert.equal(event.description, 'Live music\nFood and drinks');
+  assert.equal(event.hostName, 'The host');
+  assert.equal(event.chatEnabled, true);
+  assert.deepEqual(event.tickets.map(tier => tier.name), ['General admission']);
+  assert.deepEqual(event.tables, []);
+  assert.deepEqual(event.donations.map(tier => tier.name), ['Supporter']);
+  assert.equal(JSON.stringify(event).includes('secret'), false);
+});
+
+test('event detail rejects unpublished, private, removed and ended records', () => {
+  assert.equal(publicEvent(record('draft', {status: 'draft'}), now), null);
+  assert.equal(publicEvent(record('private', {publicOrPrivate: 'private'}), now), null);
+  assert.equal(publicEvent(record('removed', {moderationRemoved: true}), now), null);
+  assert.equal(publicEvent(record('past', {dateTime: '2026-01-01T20:00'}), now), null);
+});
+
+test('event detail endpoint reads one event and rejects invalid IDs', async () => {
+  const reads = [];
+  const db = {collection: () => ({doc: id => ({get: async () => {reads.push(id); return {...record(id), exists: true};}})})};
+  const request = url => ({method: 'GET', url});
+  const response = () => ({statusCode: 200, headers: {}, setHeader(key, value) {this.headers[key] = value;},
+    writeHead(code) {this.statusCode = code; return this;}, end(body) {this.body = body; return this;}});
+  const handler = featuredEventsHandler(db);
+  const valid = response();
+  await handler(request('/api/featured-events?id=one'), valid);
+  assert.equal(valid.statusCode, 200);
+  assert.equal(JSON.parse(valid.body).event.id, 'one');
+  const invalid = response();
+  await handler(request('/api/featured-events?id=../secret'), invalid);
+  assert.equal(invalid.statusCode, 400);
+  assert.deepEqual(reads, ['one']);
 });

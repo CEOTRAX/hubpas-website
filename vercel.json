@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/events/:id",
+      "destination": "/event.html?id=:id"
+    },
+    {
       "source": "/ticket/assets/:path*",
       "destination": "https://dmap-50136.web.app/assets/:path*"
     },

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090a0c">
+  <meta name="description" content="Discover an event on Hubpas. Explore the details, tickets and ways to join in.">
+  <title>Event details — Hubpas</title>
+  <link rel="stylesheet" href="/hubpas-home.css">
+  <link rel="stylesheet" href="/event-detail.css">
+  <script src="/hubpas-site.js" defer></script>
+  <script src="/event-detail.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header wrap">
+    <a class="wordmark" href="/" aria-label="Hubpas home">hubpas<span aria-hidden="true">✳</span></a>
+    <button class="nav-toggle" type="button" aria-controls="public-nav" aria-expanded="false">Menu ☰</button>
+    <nav id="public-nav" aria-label="Main navigation">
+      <a href="/#events">Explore events</a><a href="/#get-hubpas">Get Hubpas</a><a class="nav-download" href="https://dmap-50136.web.app/auth/select-account">Create account ↗</a>
+    </nav>
+  </header>
+  <main id="main" class="wrap event-page" aria-busy="true">
+    <a class="back-link" href="/#events">← All events</a>
+    <div id="event-status" class="event-status" role="status">Getting the event ready…</div>
+    <div id="event-content" hidden>
+      <section class="event-hero" aria-labelledby="event-title">
+        <div class="event-cover" id="event-cover"><div class="event-cover-fallback" aria-hidden="true">✳</div></div>
+        <div class="event-hero-copy">
+          <div class="event-tags" id="event-tags"></div>
+          <h1 id="event-title"></h1>
+          <p class="event-lead" id="event-lead" hidden></p>
+          <div class="event-meta" id="event-meta"></div>
+          <a class="button primary" href="#event-access" id="hero-action">See ways to join <span aria-hidden="true">↘</span></a>
+        </div>
+      </section>
+      <div class="event-layout">
+        <div class="event-main-column">
+          <section class="detail-panel description-panel" aria-labelledby="about-title">
+            <p class="eyebrow">THE EXPERIENCE</p><h2 id="about-title">About this event</h2>
+            <p id="event-description" class="event-description"></p>
+          </section>
+          <section class="detail-panel host-panel" aria-labelledby="host-title">
+            <p class="eyebrow">BROUGHT TO YOU BY</p><h2 id="host-title">Meet your host</h2>
+            <div class="host-person"><div class="host-avatar" id="host-avatar" aria-hidden="true">✳</div><div><strong id="host-name"></strong><span>Event host</span></div></div>
+          </section>
+          <section class="detail-panel conversation-panel" id="conversation" aria-labelledby="conversation-title">
+            <div class="conversation-mark" aria-hidden="true">✳</div>
+            <p class="eyebrow">THE CONVERSATION</p><h2 id="conversation-title">Be part of it.</h2>
+            <p id="conversation-copy">Meet the people going, hear from the host, and keep up with what’s next.</p>
+            <a class="button primary" href="https://dmap-50136.web.app/auth/select-account">Create an account to join ↗</a>
+            <a class="signin-link" href="https://dmap-50136.web.app/auth/email">Already have an account? Sign in</a>
+          </section>
+        </div>
+        <aside class="event-side-column" id="event-access" aria-label="Event access">
+          <section class="detail-panel access-panel" aria-labelledby="access-title">
+            <p class="eyebrow">YOUR WAY IN</p><h2 id="access-title">Join the event</h2>
+            <div id="access-options"></div>
+            <a id="access-action" class="button primary access-action" href="https://dmap-50136.web.app/auth/select-account">Create account to continue ↗</a>
+            <p class="access-note">Tickets and contributions are completed securely in Hubpas after sign in.</p>
+          </section>
+          <section class="detail-panel location-panel" id="location-panel" aria-labelledby="location-title" hidden>
+            <p class="eyebrow">WHERE TO GO</p><h2 id="location-title">The location</h2><p id="location-copy"></p>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer wrap"><div><a class="wordmark" href="/">hubpas<span aria-hidden="true">✳</span></a><p>Find your way in.</p></div><nav aria-label="Footer navigation"><a href="/privacy.html">Privacy</a><a href="mailto:hubpasofficial@gmail.com">Contact</a></nav><small>© <span data-year>2026</span> Hubpas Limited</small></footer>
+</body>
+</html>

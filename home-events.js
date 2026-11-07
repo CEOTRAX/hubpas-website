@@ -7,8 +7,8 @@ const eventDateFormat = new Intl.DateTimeFormat('en-SL', {
 function eventCard(event) {
   const card = document.createElement('a');
   card.className = 'event-card';
-  card.href = `https://dmap-50136.web.app/events/${encodeURIComponent(event.id)}`;
-  card.setAttribute('aria-label', `View ${event.title} on Hubpas`);
+  card.href = `/events/${encodeURIComponent(event.id)}`;
+  card.setAttribute('aria-label', `View ${event.title} details`);
 
   const imageWrap = document.createElement('div');
   imageWrap.className = 'event-image';

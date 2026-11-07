@@ -1,6 +1,6 @@
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
 const root = path.resolve(__dirname, '..'), port = Number(process.env.HUBPAS_PUBLIC_PORT || 8091);
-const routes = {'/':'index.html','/website/':'index.html','/website/index.html':'index.html','/privacy.html':'privacy.html','/hubpas-site.css':'hubpas-site.css','/hubpas-home.css':'hubpas-home.css','/hubpas-site.js':'hubpas-site.js','/home-events.js':'home-events.js','/downloads/Hubpas.apk':'downloads/Hubpas.apk'};
+const routes = {'/':'index.html','/website/':'index.html','/website/index.html':'index.html','/privacy.html':'privacy.html','/event.html':'event.html','/event-detail.css':'event-detail.css','/event-detail.js':'event-detail.js','/hubpas-site.css':'hubpas-site.css','/hubpas-home.css':'hubpas-home.css','/hubpas-site.js':'hubpas-site.js','/home-events.js':'home-events.js','/downloads/Hubpas.apk':'downloads/Hubpas.apk'};
 const types = {'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.apk':'application/vnd.android.package-archive'};
 http.createServer((req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
@@ -8,7 +8,7 @@ http.createServer((req, res) => {
     res.writeHead(302, {Location:'http://127.0.0.1:8080/admin.html','Cache-Control':'no-store'}).end();
     return;
   }
-  const file = routes[pathname];
+  const file = /^\/events\/[A-Za-z0-9_-]{1,80}\/?$/.test(pathname) ? 'event.html' : routes[pathname];
   if (!file) { res.writeHead(404).end('Not found'); return; }
   const absolute = path.join(root, file);
   fs.stat(absolute, (error, stats) => {
