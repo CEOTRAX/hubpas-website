@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#090a0c">
-  <meta name="description" content="Discover real events, book your place, and keep your tickets close with Hubpas.">
+  <meta name="description" content="Discover events, download Hubpas for Android, or create an account in the web app.">
   <link rel="canonical" href="https://www.hubpas.com/">
   <title>Hubpas — Find your next experience</title>
   <link rel="stylesheet" href="/hubpas-home.css">
@@ -17,7 +17,7 @@
     <a class="wordmark" href="/" aria-label="Hubpas home">hubpas<span aria-hidden="true">✳</span></a>
     <button class="nav-toggle" type="button" aria-controls="public-nav" aria-expanded="false">Menu ☰</button>
     <nav id="public-nav" aria-label="Main navigation">
-      <a href="#events">Events</a><a href="#for-hosts">For hosts</a><a class="nav-download" href="#get-hubpas">Get Hubpas ↗</a>
+      <a href="#events">Events</a><a href="#for-hosts">For hosts</a><a href="#get-hubpas">Get the app</a><a class="nav-download" href="https://dmap-50136.web.app/auth/select-account">Create account ↗</a>
     </nav>
   </header>
   <main id="main">
@@ -25,14 +25,21 @@
       <div class="hero-copy">
         <p class="eyebrow"><span class="live-dot"></span> YOUR CITY. YOUR MOMENT.</p>
         <h1 id="hero-title">Find your<br><em>way in.</em></h1>
-        <p class="hero-intro">Discover what’s happening. Show up for what matters.</p>
-        <div class="hero-actions"><a class="button primary" href="#events">Explore events <span aria-hidden="true">↗</span></a><a class="quiet-link" href="#get-hubpas">Get the app ↓</a></div>
+        <p class="hero-intro">Discover events, save your place, and keep your tickets close.</p>
+        <div class="hero-actions"><a class="button primary" href="#get-hubpas">Get Hubpas <span aria-hidden="true">↓</span></a><a class="button outline" href="https://dmap-50136.web.app/auth/select-account">Create account <span aria-hidden="true">↗</span></a></div>
       </div>
       <div class="hero-art" aria-hidden="true"><div class="art-halo"></div><div class="art-card"><span class="art-brand">hubpas ✳</span><span class="art-main">YOUR<br>WAY IN.</span><div class="art-bottom"><span>ACCESS TO WHAT MATTERS</span><span class="art-code"></span></div></div><span class="art-orbit one">✳</span><span class="art-orbit two">↗</span></div>
     </section>
 
+    <section class="download-section wrap" id="get-hubpas" aria-labelledby="download-title"><div class="section-heading"><div><p class="eyebrow">START HERE</p><h2 id="download-title">Hubpas, your way.</h2></div></div>
+      <div class="download-grid">
+        <article class="download-card"><div class="platform-icon" aria-hidden="true">↘</div><p class="platform-label">ANDROID APP</p><h3>Download the app</h3><p>Install Hubpas and keep your tickets on your phone.</p><a class="button primary download-main" href="https://firebasestorage.googleapis.com/v0/b/dmap-50136.firebasestorage.app/o/downloads%2FHubpas-1.0.39-arm64-665e3c81.apk?alt=media&amp;token=59097a54-4666-4671-81db-c647989c56ab" data-android-download>Download for Android ↓ <small>v1.0.39 · 64-bit · most phones · 71 MB</small></a><a class="download-secondary" href="https://firebasestorage.googleapis.com/v0/b/dmap-50136.firebasestorage.app/o/downloads%2FHubpas-1.0.39-armv7-9ccd4e9f.apk?alt=media&amp;token=73c2d584-97b8-4fc4-bdb3-8b7c29354e5b" data-android-download>Older 32-bit phone? Download ARMv7 ↗</a></article>
+        <article class="download-card"><div class="platform-icon" aria-hidden="true">↗</div><p class="platform-label">IPHONE · WEB APP</p><h3>Create a web account</h3><p>Start in your browser. On iPhone, add Hubpas to your Home Screen.</p><a class="button outline download-main" href="https://dmap-50136.web.app/auth/select-account">Create account on web ↗</a><a class="download-secondary" href="https://dmap-50136.web.app/">Already have an account? Open Hubpas ↗</a><details class="pwa-steps"><summary>How to add it to your iPhone</summary><p>Open Hubpas in Safari, tap Share, then choose Add to Home Screen.</p></details></article>
+      </div>
+    </section>
+
     <section class="events-section wrap" id="events" aria-labelledby="events-title">
-      <div class="section-heading"><div><p class="eyebrow">HAPPENING NEXT</p><h2 id="events-title">Worth showing up for.</h2></div><a class="quiet-link" href="https://dmap-50136.web.app/events">See all events ↗</a></div>
+      <div class="section-heading"><div><p class="eyebrow">HAPPENING NEXT</p><h2 id="events-title">Worth showing up for.</h2></div><a class="quiet-link" href="https://dmap-50136.web.app/auth/select-account">Create an account for more ↗</a></div>
       <div class="event-grid" id="featured-events" aria-live="polite" aria-busy="true"><p class="event-message">Finding upcoming events…</p></div>
     </section>
 
@@ -42,14 +49,8 @@
       <div class="how-card"><span class="how-icon" aria-hidden="true">▥</span><h2>Go</h2><p>Keep your ticket close.</p></div>
     </section>
 
-    <section class="host-section" id="for-hosts"><div class="wrap host-inner"><div><p class="eyebrow">FOR THE PEOPLE WHO BRING US TOGETHER</p><h2>Have something<br>in mind?</h2></div><div><p>Create an event and give people a way in.</p><a class="button outline" href="https://dmap-50136.web.app/events/create">Host on Hubpas ↗</a></div></div></section>
+    <section class="host-section" id="for-hosts"><div class="wrap host-inner"><div><p class="eyebrow">FOR THE PEOPLE WHO BRING US TOGETHER</p><h2>Have something<br>in mind?</h2></div><div><p>Create an event and give people a way in.</p><a class="button outline" href="https://dmap-50136.web.app/auth/select-account">Create account to host ↗</a></div></div></section>
 
-    <section class="download-section wrap" id="get-hubpas" aria-labelledby="download-title"><div class="section-heading"><div><p class="eyebrow">KEEP YOUR ACCESS CLOSE</p><h2 id="download-title">Hubpas on your phone.</h2></div></div>
-      <div class="download-grid">
-        <article class="download-card"><div class="platform-icon" aria-hidden="true">↘</div><p class="platform-label">ANDROID APP</p><h3>Download Hubpas</h3><p>For tickets, events, and everything in between.</p><a class="button primary download-main" href="https://firebasestorage.googleapis.com/v0/b/dmap-50136.firebasestorage.app/o/downloads%2FHubpas-1.0.39-arm64-665e3c81.apk?alt=media&amp;token=59097a54-4666-4671-81db-c647989c56ab" data-android-download>Download for Android ↓ <small>v1.0.39 · 64-bit · most phones · 71 MB</small></a><a class="download-secondary" href="https://firebasestorage.googleapis.com/v0/b/dmap-50136.firebasestorage.app/o/downloads%2FHubpas-1.0.39-armv7-9ccd4e9f.apk?alt=media&amp;token=73c2d584-97b8-4fc4-bdb3-8b7c29354e5b" data-android-download>Older 32-bit phone? Download ARMv7 ↗</a></article>
-        <article class="download-card"><div class="platform-icon" aria-hidden="true">↗</div><p class="platform-label">IPHONE · WEB APP</p><h3>Open Hubpas</h3><p>Use Hubpas in Safari and add it to your Home Screen.</p><a class="button outline download-main" href="https://dmap-50136.web.app/">Open the web app ↗</a><details class="pwa-steps"><summary>How to add it to your iPhone</summary><p>Open in Safari, tap Share, then choose Add to Home Screen.</p></details></article>
-      </div>
-    </section>
   </main>
   <footer class="site-footer wrap"><div><a class="wordmark" href="/">hubpas<span aria-hidden="true">✳</span></a><p>Find your way in.</p></div><nav aria-label="Footer navigation"><a href="/privacy.html">Privacy</a><a href="mailto:hubpasofficial@gmail.com">Contact</a><a href="/admin.html">Admin login</a></nav><small>© <span data-year>2026</span> Hubpas Limited</small></footer>
 </body>
