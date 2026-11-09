@@ -234,6 +234,7 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
             },
       walletPinHash: "must-not-leak",
     };
+  initial["users/u-undated"] = { displayName: "Legacy user" };
   const db = database(initial),
     base = "records?resource=users&from=2026-10-01&to=2026-10-31&pageSize=25";
   const first = await request(db, base);
@@ -266,6 +267,44 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
       encodeURIComponent(first.body.cursor),
   );
   assert.equal(mismatch.status, 400);
+  let newestCursor;
+  for (const sort of ["newest", "oldest"]) {
+    const allTime = "records?resource=users&sort=" + sort + "&pageSize=25";
+    const pages = [];
+    let cursor = null;
+    do {
+      const response = await request(
+        db,
+        allTime + (cursor ? "&cursor=" + encodeURIComponent(cursor) : ""),
+      );
+      assert.equal(response.status, 200);
+      if (sort === "newest" && !pages.length) newestCursor = response.body.cursor;
+      pages.push(...response.body.rows);
+      cursor = response.body.cursor;
+    } while (cursor);
+    assert.equal(pages.length, 60);
+    assert.equal(new Set(pages.map((row) => row.id)).size, 60);
+    const dates = pages.map((row) => Date.parse(row.data.createdAt));
+    assert.deepEqual(dates, [...dates].sort((a, b) => sort === "newest" ? b - a : a - b));
+  }
+  const idOrder = await request(db, "records?resource=users&sort=id&pageSize=50");
+  assert.equal(idOrder.status, 200);
+  assert.deepEqual(
+    idOrder.body.rows.map((row) => row.id),
+    [...idOrder.body.rows.map((row) => row.id)].sort(),
+  );
+  const oldCursor = await request(
+    db,
+    "records?resource=users&sort=oldest&cursor=" + encodeURIComponent(newestCursor),
+  );
+  assert.equal(oldCursor.status, 400);
+  const idWithDates = await request(
+    db,
+    "records?resource=users&sort=id&from=2026-10-01&to=2026-10-31",
+  );
+  assert.equal(idWithDates.status, 400);
+  const undated = await request(db, "records?resource=users&sort=id&searchField=id&search=u-undated");
+  assert.equal(undated.body.rows[0].id, "u-undated");
 });
 test("a role-authorised moderation change and its audit are atomic and idempotent", async () => {
   const previous = process.env.ADMIN_ACTIONS_ENABLED;

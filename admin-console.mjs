@@ -494,6 +494,13 @@ export async function mountDashboard({
       const status = params.get("status");
       if (status && status !== "all")
         rows = rows.filter((row) => row.data.status === status);
+      const sort = params.get("sort") || "newest";
+      if (sort !== "id")
+        rows = rows.filter((row) => row.data[resource.dateField]).sort((a, b) => {
+          const difference = new Date(a.data[resource.dateField]) - new Date(b.data[resource.dateField]);
+          return (sort === "oldest" ? 1 : -1) * (difference || a.id.localeCompare(b.id));
+        });
+      else rows = rows.sort((a, b) => a.id.localeCompare(b.id));
       return {
         rows: rows.map(examplePeople),
         cursor: null,
@@ -934,8 +941,16 @@ export async function mountDashboard({
       .join("");
     $("record-search").value = "";
     $("record-status").value = "all";
+    $("record-sort").value = "newest";
+    syncRecordSort();
     $("event-panel").hidden =
       state.module !== "events" || state.resource !== "events";
+  }
+  function syncRecordSort() {
+    const idOption = $("record-sort").querySelector('option[value="id"]');
+    idOption.disabled = $("period").value !== "all";
+    if (idOption.disabled && $("record-sort").value === "id")
+      $("record-sort").value = "newest";
   }
   async function loadResourceInsights() {
     const request = (state.insightsRequest || 0) + 1;
@@ -1014,6 +1029,7 @@ export async function mountDashboard({
       const params = rangeParams();
       params.set("resource", state.resource);
       params.set("status", $("record-status").value);
+      params.set("sort", $("record-sort").value);
       if (state.parent) params.set("parent", state.parent);
       if (state.nested) params.set("nested", state.nested);
       if ($("record-search").value.trim()) {
@@ -1030,7 +1046,7 @@ export async function mountDashboard({
         state.rows.length +
         " results · page " +
         (state.previous.length + 1) +
-        "";
+        " · " + $("record-sort").selectedOptions[0].textContent;
       $("next").disabled = !state.cursor;
       $("previous").disabled = !state.previous.length;
       $("last-refresh").textContent =
@@ -2486,6 +2502,7 @@ export async function mountDashboard({
   };
   $("period").onchange = () => {
     $("custom-dates").hidden = $("period").value !== "custom";
+    syncRecordSort();
     if ($("period").value !== "custom") $("apply-period").click();
   };
   $("apply-period").onclick = async () => {

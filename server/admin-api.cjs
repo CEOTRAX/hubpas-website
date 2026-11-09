@@ -158,6 +158,7 @@ function queryBase(
   format,
   services,
   orderByDate = false,
+  direction = "desc",
 ) {
   const range = rangeFrom(params);
   let query = ref;
@@ -211,17 +212,28 @@ function queryBase(
         "<",
         format === "iso" ? range.end.toISOString().slice(0, 10) : range.end,
       );
-  if (range || orderByDate) query = query.orderBy(resource.dateField, "desc");
+  else if (orderByDate && format !== "all")
+    query = query.where(
+      resource.dateField,
+      ">=",
+      format === "iso" ? "0000" : new Date(0),
+    );
+  if (range || orderByDate) query = query.orderBy(resource.dateField, direction);
   return {
     query: query.orderBy(
       services.FieldPath.documentId(),
-      range || orderByDate ? "desc" : "asc",
+      range || orderByDate ? direction : "asc",
     ),
     range,
   };
 }
 async function records(params, actor, services) {
   const { name, resource, ref } = await resourceFor(params, actor, services);
+  const sort = params.get("sort") || "newest";
+  if (!["newest", "oldest", "id"].includes(sort))
+    fail(400, "Choose a supported list order.");
+  if (sort === "id" && rangeFrom(params))
+    fail(400, "Record ID order is available with All time only.");
   if (resource.fixedId) {
     const snap = await ref.doc(resource.fixedId).get();
     return {
@@ -252,17 +264,19 @@ async function records(params, actor, services) {
     searchField: params.get("searchField"),
     parent: params.get("parent"),
     nested: params.get("nested"),
+    sort,
   });
   const previous = params.get("cursor")
     ? codec.decode(params.get("cursor"))
     : null;
   if (previous && (previous.scope !== scope || previous.uid !== actor.uid))
     fail(400, "Cursor does not match this user and filter.");
-  const range = rangeFrom(params),
+  const dateOrdered = sort !== "id",
+    direction = sort === "oldest" ? "asc" : "desc",
     formats =
       params.get("searchField") === "id" && params.get("search")
         ? ["all"]
-        : range
+        : dateOrdered
           ? ["timestamp", "iso"]
           : ["all"];
   const projection = listFields(name, resource).filter(
@@ -270,7 +284,7 @@ async function records(params, actor, services) {
   );
   const snapshots = await Promise.all(
     formats.map(async (format) => {
-      const built = queryBase(ref, resource, params, format, services);
+      const built = queryBase(ref, resource, params, format, services, dateOrdered, direction);
       if (built.directId) {
         if (!safeId(built.directId)) fail(400, "Invalid record ID.");
         const snap = await ref.doc(built.directId).get();
@@ -279,7 +293,7 @@ async function records(params, actor, services) {
       let query = built.query.select(...projection);
       const anchor = previous?.anchors?.[format];
       if (anchor)
-        query = range
+        query = dateOrdered
           ? query.startAfter(
               format === "timestamp" ? new Date(anchor.date) : anchor.date,
               anchor.id,
@@ -298,10 +312,11 @@ async function records(params, actor, services) {
         .map((item) => [item.doc.id, item]),
     ).values(),
   ].sort((a, b) =>
-    range
-      ? Date.parse(toDate(b.doc.data()[resource.dateField])) -
-          Date.parse(toDate(a.doc.data()[resource.dateField])) ||
-        b.doc.id.localeCompare(a.doc.id)
+    dateOrdered
+      ? (direction === "desc" ? -1 : 1) *
+          (Date.parse(toDate(a.doc.data()[resource.dateField])) -
+            Date.parse(toDate(b.doc.data()[resource.dateField])) ||
+            a.doc.id.localeCompare(b.doc.id))
       : a.doc.id.localeCompare(b.doc.id),
   );
   const page = merged.slice(0, size);
@@ -309,7 +324,7 @@ async function records(params, actor, services) {
   page.forEach(({ doc, format }) => {
     anchors[format] = {
       id: doc.id,
-      date: range ? toDate(doc.data()[resource.dateField]) : null,
+      date: dateOrdered ? toDate(doc.data()[resource.dateField]) : null,
     };
   });
   const more = !snapshots.some((group) => group.direct) && merged.length > size;
