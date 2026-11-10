@@ -851,6 +851,7 @@ export async function mountDashboard({
       module.resources[0];
     renderTabs();
     if (selection) {
+      if (selection.sort) $("record-sort").value = selection.sort;
       $("search-field").value = selection.searchField || "userId";
       $("record-search").value = selection.search || "";
     }
@@ -1224,6 +1225,7 @@ export async function mountDashboard({
         .filter(
           ([name, action]) =>
             action.resource === state.resource &&
+            !["event.manage", "event.scan", "event.notify", "event.boost", "event.configure"].includes(name) &&
             state.session.actions.includes(name),
         )
         .map(
@@ -2259,6 +2261,213 @@ export async function mountDashboard({
     };
   }
   let eventsRequest = 0;
+  let managedEventCursor = null;
+  let managedEventPages = [null];
+  let managedEventBusy = false;
+  const managedFilters = () => {
+    const params = new URLSearchParams();
+    for (const [field, id] of [
+      ["search", "event-manage-search"], ["id", "event-manage-id"],
+      ["host", "event-manage-host"], ["status", "event-manage-status"],
+      ["from", "event-manage-from"], ["to", "event-manage-to"],
+    ]) if ($(id).value.trim()) params.set(field, $(id).value.trim());
+    return params;
+  };
+  async function loadManagedEvents(cursor = null) {
+    if (!state.session?.resources.includes("events")) return;
+    const params = managedFilters();
+    if (cursor) params.set("cursor", cursor);
+    $("event-manage-message").textContent = "Loading events…";
+    try {
+      const result = await api("event-management", params);
+      managedEventCursor = result.cursor;
+      $("event-manage-list").innerHTML = result.rows.length
+        ? '<table><thead><tr><th>Event</th><th>Host</th><th>Date</th><th>Publication</th><th>Visibility</th><th>Access</th><th>Sales</th><th>Boost</th><th></th></tr></thead><tbody>' +
+          result.rows.map((row, index) => {
+            const d = row.data;
+            const access = [d.interactiveFeatures?.ticketsEnabled && "Tickets", d.interactiveFeatures?.tablesEnabled && "Tables", d.interactiveFeatures?.raffleEnabled && "Raffle", d.interactiveFeatures?.donationsEnabled && "Donations", d.interactiveFeatures?.votesEnabled && "Votes", d.interactiveFeatures?.rsvpEnabled && "RSVP"].filter(Boolean).join(", ") || "—";
+            const sold = Array.isArray(d.ticketTiers) ? d.ticketTiers.reduce((sum, tier) => sum + (Number(tier.sold) || 0), 0) : 0;
+            const gross = Array.isArray(d.ticketTiers) ? d.ticketTiers.reduce((sum, tier) => sum + (Number(tier.sold) || 0) * (Number(tier.price) || 0), 0) : 0;
+            return '<tr><td><strong>' + escape(d.title || "Untitled event") + '</strong><span class="customer-contact">' + escape(row.id) + '</span></td><td>' + escape(d.hostName || d.hostId || "—") + '</td><td>' + escape(readable("dateTime", d.dateTime)) + '</td><td>' + badge(d.status) + '</td><td>' + badge(d.publicVisibility || "visible") + '</td><td>' + escape(access) + '</td><td>' + sold + ' <span class="customer-contact">Le ' + escape(gross.toFixed(2)) + ' tier estimate</span></td><td>' + escape(d.boostStatus || "none") + '</td><td><button type="button" data-manage-event="' + index + '">Manage →</button></td></tr>';
+          }).join("") + '</tbody></table>'
+        : '<div class="empty">No events match these filters.</div>';
+      $("event-manage-list").querySelectorAll("[data-manage-event]").forEach(button => {
+        button.onclick = () => openManagedEvent(result.rows[Number(button.dataset.manageEvent)].id);
+      });
+      $("event-manage-message").textContent = result.limited ? "More events available. Continue to the next page." : result.rows.length + " events on this page.";
+      $("event-manage-next").disabled = !managedEventCursor;
+      $("event-manage-previous").disabled = managedEventPages.length < 2;
+    } catch (error) {
+      $("event-manage-message").textContent = error.message;
+    }
+  }
+  $("event-management-filter").onsubmit = event => {
+    event.preventDefault(); managedEventPages = [null]; loadManagedEvents();
+  };
+  $("event-manage-next").onclick = () => {
+    if (!managedEventCursor) return;
+    managedEventPages.push(managedEventCursor);
+    loadManagedEvents(managedEventCursor);
+  };
+  $("event-manage-previous").onclick = () => {
+    if (managedEventPages.length < 2) return;
+    managedEventPages.pop();
+    loadManagedEvents(managedEventPages.at(-1));
+  };
+  const managedRows = (title, rows, fields) => '<div class="event-management-group"><h3>' + escape(title) + '</h3>' + (rows.length
+    ? '<div class="event-management-items">' + rows.map(row => '<div><strong>' + escape(row.id) + '</strong><span>' + escape(fields.map(field => row.data[field] ?? "").filter(Boolean).join(" · ")) + '</span></div>').join("") + '</div>'
+    : '<p class="muted small">No records in this sample.</p>') + '</div>';
+  async function openManagedEvent(id) {
+    const panel = $("event-management-detail");
+    panel.hidden = false;
+    panel.innerHTML = '<p class="muted">Loading event details…</p>';
+    try {
+      const detail = await api("event-management-detail", new URLSearchParams({ id }));
+      state.managedEvent = detail;
+      const d = detail.data;
+      const canEdit = !preview && state.session.eventManagementEnabled === true;
+      const canScan = canEdit && !state.session.deniedActions?.includes("event.scan");
+      const canNotify = canEdit && !state.session.deniedActions?.includes("event.notify");
+      const canBoost = canEdit && !state.session.deniedActions?.includes("event.boost");
+      const canConfigure = canEdit && !state.session.deniedActions?.includes("event.configure");
+      const detailFields = ["title", "shortDescription", "description", "dateTime", "endDateTime", "location", "district", "fullAddress", "venueName", "category", "image", "promoVideo", "capacity"];
+      panel.innerHTML = '<div class="section-heading"><div><div class="eyebrow">Event operations · ' + escape(id) + '</div><h2>' + escape(d.title || "Untitled event") + '</h2><p class="muted">Hosted by ' + escape(d.hostName || d.hostId || "Unknown host") + ' · ' + escape(d.status || "unknown") + ' · Public visibility: <strong>' + escape(d.publicVisibility || "visible") + '</strong></p><a href="/event.html?id=' + encodeURIComponent(id) + '" target="_blank" rel="noopener">View public page ↗</a></div><button id="managed-event-close" type="button">Close</button></div>' +
+        '<div class="event-management-stats"><div><small>Views</small><strong>' + escape(d.views || 0) + '</strong></div><div><small>Going</small><strong>' + escape(d.goingCount || 0) + '</strong></div><div><small>RSVPs</small><strong>' + escape(d.rsvpCount || 0) + '</strong></div><div><small>Revenue recorded</small><strong>' + escape(d.revenue ?? "—") + '</strong></div><div><small>Boost campaigns</small><strong>' + detail.boosts.length + '</strong></div></div>' +
+        '<div class="event-management-tabs"><button type="button" data-event-tab="details">Event details</button><button type="button" data-event-tab="access">Access</button><button type="button" data-event-tab="lists">Access lists</button><button type="button" data-event-tab="analytics">Analytics & revenue</button><button type="button" data-event-tab="boosts">Boosts</button><button type="button" data-event-tab="notifications">Notifications</button><button type="button" data-event-tab="audit">Audit</button></div>' +
+        '<div id="managed-event-tab"></div><p class="muted small">Lists show up to 50 recent matching records each; audit shows up to 100. Use the linked workspace records for deeper investigation.</p><p id="managed-event-feedback" class="muted small" role="status"></p>';
+      $("managed-event-close").onclick = () => { panel.hidden = true; state.managedEvent = null; };
+      const renderTab = tab => {
+        const content = $("managed-event-tab");
+        panel.querySelectorAll("[data-event-tab]").forEach(button => button.classList.toggle("active", button.dataset.eventTab === tab));
+        if (tab === "details") {
+          content.innerHTML = '<div class="event-management-group"><h3>Public discovery</h3><p>Current visibility: <strong>' + escape(d.publicVisibility || "visible") + '</strong>. Tickets and payment records remain intact.</p>' + (canEdit ? '<div class="detail-actions"><button data-visibility="hidden">Hide event</button><button data-visibility="visible">Restore publicly</button><button data-visibility="removed">Remove from discovery</button></div>' : '') + '</div>' +
+            '<form id="managed-detail-form" class="event-management-form"><h3>Edit event</h3>' + detailFields.map(field => '<label class="field"><span>' + escape(fieldLabel(field)) + '</span>' + (field === "description" ? '<textarea name="' + field + '" rows="4">' + escape(d[field] || "") + '</textarea>' : '<input name="' + field + '" value="' + escape(d[field] ?? "") + '" />') + '</label>').join("") + (canEdit ? '<button type="submit">Save event details</button>' : '') + '</form>' +
+            managedRows("Co-hosts", (d.coHosts || []).map((item, index) => ({ id: item.userId || String(index), data: item })), ["status"]) + (canEdit ? '<form id="managed-cohost-form" class="event-management-form"><label class="field"><span>Co-host UID to add or remove</span><input name="uid" required /></label>' + ["canEditEvent", "canManageTickets", "canViewAnalytics", "scanTickets", "canManageRevenue", "canSendNotifications"].map(key => '<label class="field"><span>' + escape(fieldLabel(key)) + '</span><input type="checkbox" name="' + key + '" /></label>').join("") + '<div class="detail-actions"><button type="submit" name="operation" value="add">Add co-host</button><button type="submit" name="operation" value="remove">Remove co-host</button></div></form>' : '');
+          content.querySelectorAll("[data-visibility]").forEach(button => button.onclick = () => submitManagedAction(id, "visibility", button.dataset.visibility, "Change public visibility to " + button.dataset.visibility));
+          if (canEdit) {
+            $("managed-detail-form").onsubmit = event => { event.preventDefault(); const patch = Object.fromEntries(new FormData(event.currentTarget).entries()); if (patch.capacity) patch.capacity = Number(patch.capacity); submitManagedAction(id, "details", patch, "Save event details"); };
+            $("managed-cohost-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget, uid = form.elements.namedItem("uid").value.trim(), operation = event.submitter?.value; let next = [...(d.coHosts || [])].filter(item => item.userId !== uid); if (operation === "add") { const permissions = Object.fromEntries(["canEditEvent", "canManageTickets", "canViewAnalytics", "scanTickets", "canManageRevenue", "canSendNotifications"].map(key => [key, form.elements.namedItem(key).checked])); next.push({ userId: uid, status: "pending", permissions }); } submitManagedAction(id, "cohosts", next, operation === "add" ? "Add co-host" : "Remove co-host"); };
+          }
+        } else if (tab === "access") {
+          const features = d.interactiveFeatures || {};
+          content.innerHTML = '<div class="event-management-group"><h3>Access setup</h3><p class="muted small">Paid access history and sold counts are protected by the server.</p><div class="event-management-stats">' + ["ticketsEnabled", "tablesEnabled", "raffleEnabled", "donationsEnabled", "votesEnabled", "rsvpEnabled", "inviteEnabled", "itemsEnabled"].map(key => '<div><small>' + escape(fieldLabel(key)) + '</small><strong>' + (features[key] ? "On" : "Off") + '</strong></div>').join("") + '</div></div>' + managedRows("Ticket and table tiers", (d.ticketTiers || []).map((tier, index) => ({ id: tier.name || String(index), data: tier })), ["type", "price", "quantity", "sold"]) + managedRows("Donation tiers", (d.donationTiers || []).map((tier, index) => ({ id: tier.name || String(index), data: tier })), ["amount"]) + '<form id="managed-access-form" class="event-management-form"><h3>Configure access</h3>' + ["ticketsEnabled", "tablesEnabled", "raffleEnabled", "donationsEnabled", "votesEnabled", "rsvpEnabled", "inviteEnabled", "itemsEnabled"].map(key => '<label class="field"><span>' + escape(fieldLabel(key)) + '</span><input type="checkbox" name="' + key + '" ' + (features[key] ? 'checked' : '') + ' /></label>').join("") + (canEdit ? '<button type="submit">Save access setup</button>' : '') + '</form>' + (canEdit ? '<form id="managed-tier-form" class="event-management-form"><h3>Add ticket or table tier</h3><label class="field"><span>Type</span><select name="type"><option value="ticket">Ticket</option><option value="table">Table</option></select></label><label class="field"><span>Name</span><input name="name" required maxlength="100" /></label><label class="field"><span>Price (SLE)</span><input name="price" type="number" min="0" step="0.01" required /></label><label class="field"><span>Quantity</span><input name="quantity" type="number" min="1" step="1" required /></label><label class="field"><span>Seats per table</span><input name="tableCapacity" type="number" min="1" step="1" /></label><button type="submit">Add access tier</button></form><form id="managed-donation-form" class="event-management-form"><h3>Add donation tier</h3><label class="field"><span>Name</span><input name="name" required maxlength="100" /></label><label class="field"><span>Amount (SLE)</span><input name="amount" type="number" min="0.01" step="0.01" required /></label><button type="submit">Add donation tier</button></form>' : '');
+          if (canEdit) {
+            $("managed-access-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget, next = {}; for (const key of ["ticketsEnabled", "tablesEnabled", "raffleEnabled", "donationsEnabled", "votesEnabled", "rsvpEnabled", "inviteEnabled", "itemsEnabled"]) next[key] = form.elements[key].checked; submitManagedAction(id, "access", { interactiveFeatures: next }, "Save access setup"); };
+            $("managed-tier-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget, type = form.elements.namedItem("type").value; const tier = { id: crypto.randomUUID(), name: form.elements.namedItem("name").value.trim(), type, price: Number(form.elements.namedItem("price").value), quantity: Number(form.elements.namedItem("quantity").value) }; if (type === "table") tier.tableCapacity = Number(form.elements.namedItem("tableCapacity").value) || 1; const existing = (d.ticketTiers || []).map(({ sold, ...rest }) => rest); submitManagedAction(id, "access", { ticketTiers: [...existing, tier] }, "Add access tier"); };
+            $("managed-donation-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget; const tier = { id: crypto.randomUUID(), name: form.elements.namedItem("name").value.trim(), amount: Number(form.elements.namedItem("amount").value), isOpenAmount: false }; submitManagedAction(id, "access", { donationTiers: [...(d.donationTiers || []), tier] }, "Add donation tier"); };
+          }
+          content.insertAdjacentHTML("beforeend", managedRows("Vendor slots", (d.vendorSlots || []).map(slot => ({ id: slot.name || slot.id, data: slot })), ["price", "quantity", "sold"]) + managedRows("Sponsors", (d.sponsors || []).map((sponsor, index) => ({ id: sponsor.name || sponsor.id || String(index), data: sponsor })), ["status"]));
+          if (canConfigure) {
+            const config = '<form id="managed-raffle-form" class="event-management-form"><h3>Free raffle</h3><label class="field"><span>Title</span><input name="title" required /></label><label class="field"><span>Prize</span><input name="prize" required /></label><label class="field"><span>Total entries</span><input name="totalTickets" type="number" min="1" required /></label><label class="field"><span>Draw date and time</span><input name="drawDateTime" type="datetime-local" required /></label><button type="submit">Save raffle</button></form>' +
+              '<form id="managed-poll-form" class="event-management-form"><h3>Add a free vote</h3><label class="field"><span>Question</span><input name="question" required /></label><label class="field"><span>Options, one per line</span><textarea name="options" rows="4" required></textarea></label><button type="submit">Add vote</button></form>' +
+              '<form id="managed-donation-campaign-form" class="event-management-form"><h3>Donation campaign</h3><label class="field"><span>Title</span><input name="title" required /></label><label class="field"><span>Goal (SLE)</span><input name="goalAmount" type="number" min="0.01" step="0.01" required /></label><label class="field"><span>Description</span><textarea name="description" rows="3"></textarea></label><button type="submit">Save campaign</button></form>' +
+              '<form id="managed-rsvp-form" class="event-management-form"><h3>RSVP settings</h3><label class="field"><span>Enable RSVPs</span><input name="enabled" type="checkbox" /></label><label class="field"><span>Allow maybe responses</span><input name="collectMaybe" type="checkbox" /></label><label class="field"><span>Deadline</span><input name="deadline" type="datetime-local" /></label><label class="field"><span>Maximum attendees</span><input name="maxAttendees" type="number" min="1" required /></label><button type="submit">Save RSVPs</button></form>' +
+              '<form id="managed-vendor-form" class="event-management-form"><h3>Add vendor slot</h3><label class="field"><span>Name</span><input name="name" required /></label><label class="field"><span>Price (SLE)</span><input name="price" type="number" min="0" step="0.01" required /></label><label class="field"><span>Quantity</span><input name="quantity" type="number" min="1" required /></label><label class="field"><span>Description</span><textarea name="description" rows="3"></textarea></label><button type="submit">Add vendor slot</button></form>' +
+              '<form id="managed-sponsor-form" class="event-management-form"><h3>Sponsor availability</h3><label class="field"><span>Seeking sponsors</span><input name="enabled" type="checkbox" /></label><button type="submit">Save sponsor setting</button></form>';
+            content.insertAdjacentHTML("beforeend", config);
+            const field = (form, name) => form.elements.namedItem(name);
+            const submit = (formId, kind, build) => { $(formId).onsubmit = event => { event.preventDefault(); submitManagedFeature(id, kind, build(event.currentTarget)); }; };
+            const raffle = features.raffle || {};
+            for (const key of ["title", "prize", "totalTickets", "drawDateTime"]) if (raffle[key] != null) field($("managed-raffle-form"), key).value = key === "drawDateTime" ? String(raffle[key]).slice(0, 16) : raffle[key];
+            submit("managed-raffle-form", "raffle", form => ({ title: field(form, "title").value, prize: field(form, "prize").value, totalTickets: Number(field(form, "totalTickets").value), drawDateTime: new Date(field(form, "drawDateTime").value).toISOString() }));
+            submit("managed-poll-form", "poll", form => ({ question: field(form, "question").value, options: field(form, "options").value.split("\n").map(option => option.trim()).filter(Boolean) }));
+            const campaign = features.donationCampaign || {};
+            for (const key of ["title", "description", "goalAmount"]) if (campaign[key] != null) field($("managed-donation-campaign-form"), key).value = campaign[key];
+            submit("managed-donation-campaign-form", "donationCampaign", form => ({ title: field(form, "title").value, description: field(form, "description").value, goalAmount: Number(field(form, "goalAmount").value) }));
+            const rsvp = features.rsvpSettings || {};
+            field($("managed-rsvp-form"), "enabled").checked = rsvp.enabled === true;
+            field($("managed-rsvp-form"), "collectMaybe").checked = rsvp.collectMaybe === true;
+            field($("managed-rsvp-form"), "deadline").value = String(rsvp.deadline || "").slice(0, 16);
+            field($("managed-rsvp-form"), "maxAttendees").value = rsvp.maxAttendees || d.capacity || 1;
+            submit("managed-rsvp-form", "rsvpSettings", form => ({ enabled: field(form, "enabled").checked, collectMaybe: field(form, "collectMaybe").checked, deadline: field(form, "deadline").value ? new Date(field(form, "deadline").value).toISOString() : "", maxAttendees: Number(field(form, "maxAttendees").value) }));
+            submit("managed-vendor-form", "vendorSlot", form => ({ name: field(form, "name").value, price: Number(field(form, "price").value), quantity: Number(field(form, "quantity").value), description: field(form, "description").value }));
+            field($("managed-sponsor-form"), "enabled").checked = d.lookingForSponsors === true;
+            submit("managed-sponsor-form", "sponsorSeeking", form => ({ enabled: field(form, "enabled").checked }));
+          }
+        } else if (tab === "lists") {
+          content.innerHTML = (canScan ? '<form id="managed-scan-form" class="event-management-form"><h3>Scan or validate a ticket</h3><label class="field"><span>Ticket QR code</span><input type="text" name="qrCode" autocomplete="off" required /></label><label class="field"><span>Attendees for a table ticket</span><input type="number" name="paxCount" min="1" max="100" placeholder="One for a standard ticket" /></label><button type="submit">Validate entry</button></form>' : '') + managedRows("Admission tickets", detail.tickets, ["status", "ticketTierId", "usedPax", "totalPax"]) + managedRows("RSVP responses", detail.rsvps, ["status", "response"]) + managedRows("Going", detail.going, ["status"]);
+          if (canScan) $("managed-scan-form").onsubmit = async event => {
+            event.preventDefault();
+            if (managedEventBusy) return;
+            const form = event.currentTarget;
+            const reason = window.prompt("Reason for validating this ticket (at least 10 characters):");
+            if (reason === null || !window.confirm("Mark this ticket as used for event entry?")) return;
+            managedEventBusy = true;
+            try {
+              const result = await api("event-ticket-scan", new URLSearchParams(), "POST", { id, qrCode: form.elements.namedItem("qrCode").value.trim(), paxCount: form.elements.namedItem("paxCount").value || null, reason, requestId: crypto.randomUUID() });
+              await openManagedEvent(id);
+              $("managed-event-feedback").textContent = "Ticket " + result.ticketId + " validated. " + result.usedPax + " of " + result.totalPax + " attendees checked in.";
+            } catch (error) { $("managed-event-feedback").textContent = error.message; }
+            finally { managedEventBusy = false; }
+          };
+        } else if (tab === "analytics") {
+          const days = (detail.daily || []).slice(-31);
+          const max = Math.max(1, ...days.map(day => Number(day.data.views) || 0));
+          const tiers = d.ticketTiers || [];
+          const gross = tiers.reduce((total, tier) => total + (Number(tier.sold) || 0) * (Number(tier.price) || 0), 0);
+          content.innerHTML = '<div class="event-management-stats"><div><small>Recorded event revenue</small><strong>' + escape(d.revenue ?? "—") + '</strong></div><div><small>Tier sales estimate</small><strong>Le ' + escape(gross.toFixed(2)) + '</strong></div><div><small>Tickets in current sample</small><strong>' + detail.tickets.length + '</strong></div><div><small>Boost campaigns</small><strong>' + detail.boosts.length + '</strong></div></div><div class="event-management-group"><h3>Daily views</h3><p class="muted small">Recent eventStatsDaily records. Revenue estimates do not replace settled ledger totals.</p><div class="event-management-chart">' + days.map(day => '<div title="' + escape((day.data.date || day.id) + ': ' + (day.data.views || 0) + ' views') + '"><span style="height:' + Math.max(3, Math.round((Number(day.data.views) || 0) / max * 100)) + '%"></span><small>' + escape(String(day.data.date || day.id).slice(-5)) + '</small></div>').join("") + '</div></div>' + managedRows("Daily performance", days, ["views", "clicks", "ticketSales", "revenue"]);
+        } else if (tab === "boosts") {
+          content.innerHTML = managedRows("Boost campaigns", detail.boosts, ["status", "startsAt", "endsAt", "budget"]) + (canBoost && detail.boosts.length ? '<form id="managed-boost-form" class="event-management-form"><h3>Edit campaign audience</h3><label class="field"><span>Campaign</span><select name="campaignId">' + detail.boosts.map(item => '<option value="' + escape(item.id) + '">' + escape(item.id) + '</option>').join("") + '</select></label><label class="field"><span>Districts, comma separated</span><input name="districts" required /></label><label class="field"><span>Age range</span><select name="ageRange">' + ["All", "18–24", "25–34", "35–44", "45–54", "55+"].map(value => '<option>' + value + '</option>').join("") + '</select></label><label class="field"><span>Gender</span><select name="gender"><option>Both</option><option>Male</option><option>Female</option></select></label><label class="field"><span>Interests, comma separated</span><input name="interests" /></label><button type="submit">Save targeting</button></form>' : '');
+          if (canBoost && detail.boosts.length) {
+            const form = $("managed-boost-form");
+            const fill = () => { const row = detail.boosts.find(item => item.id === form.elements.namedItem("campaignId").value); const targeting = row?.data.targeting || {}; form.elements.namedItem("districts").value = (targeting.districts || []).join(", "); form.elements.namedItem("ageRange").value = targeting.ageRange || "All"; form.elements.namedItem("gender").value = targeting.gender || "Both"; form.elements.namedItem("interests").value = (targeting.interests || []).join(", "); };
+            form.elements.namedItem("campaignId").onchange = fill; fill();
+            form.onsubmit = async event => { event.preventDefault(); if (managedEventBusy) return; const campaignId = form.elements.namedItem("campaignId").value; const split = name => form.elements.namedItem(name).value.split(",").map(item => item.trim()).filter(Boolean); const targeting = { districts: split("districts"), ageRange: form.elements.namedItem("ageRange").value, gender: form.elements.namedItem("gender").value, interests: split("interests") }; const reason = window.prompt("Reason for changing campaign targeting (at least 10 characters):"); if (reason === null || !window.confirm("Update the selected boost campaign audience?")) return; managedEventBusy = true; try { await api("event-boost", new URLSearchParams(), "POST", { id, campaignId, targeting, reason, requestId: crypto.randomUUID() }); await openManagedEvent(id); $("managed-event-feedback").textContent = "Boost targeting saved and audited."; } catch (error) { $("managed-event-feedback").textContent = error.message; } finally { managedEventBusy = false; } };
+          }
+        } else if (tab === "notifications") {
+          content.innerHTML = (canNotify ? '<form id="managed-notification-form" class="event-management-form"><h3>Send event update</h3><label class="field"><span>Message</span><textarea name="message" maxlength="500" rows="4" required></textarea></label><label class="field"><span>Ticket buyers</span><input type="checkbox" name="buyers" checked /></label><label class="field"><span>RSVP responses</span><input type="checkbox" name="rsvps" /></label><button type="submit">Queue notification</button></form><p class="muted small">Messages respect each recipient’s event update preference. Delivery status is recorded separately.</p>' : '<p class="muted">Notifications are unavailable for this dashboard role or server.</p>') + managedRows("Notification delivery", detail.notifications || [], ["status", "recipientsCount", "failedCount", "createdAt"]);
+          if (canNotify) $("managed-notification-form").onsubmit = async event => {
+            event.preventDefault();
+            if (managedEventBusy) return;
+            const form = event.currentTarget;
+            const message = form.elements.namedItem("message").value.trim();
+            const audience = { buyers: form.elements.namedItem("buyers").checked, rsvps: form.elements.namedItem("rsvps").checked };
+            const reason = window.prompt("Reason for sending this event update (at least 10 characters):");
+            if (reason === null || !window.confirm("Send this message to the selected event audience?")) return;
+            managedEventBusy = true;
+            try {
+              await api("event-notification", new URLSearchParams(), "POST", { id, message, audience, reason, requestId: crypto.randomUUID() });
+              $("managed-event-feedback").textContent = "Event notification queued. Check the audit and delivery status before sending another.";
+              form.reset();
+            } catch (error) { $("managed-event-feedback").textContent = error.message; }
+            finally { managedEventBusy = false; }
+          };
+        } else {
+          content.innerHTML = managedRows("Administrative actions", detail.audits, ["action", "reason", "at"]) + '<button type="button" id="managed-event-all-audits">View all audit records →</button>';
+          $("managed-event-all-audits").onclick = () => { $("period").value = "all"; $("custom-dates").hidden = true; openModule("operations", { resource: "adminAuditLogs", searchField: "eventId", search: id, sort: "id" }); };
+        }
+      };
+      panel.querySelectorAll("[data-event-tab]").forEach(button => button.onclick = () => renderTab(button.dataset.eventTab));
+      renderTab("details");
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) { panel.innerHTML = '<p class="muted">' + escape(error.message) + '</p>'; }
+  }
+  async function submitManagedAction(id, action, value, label) {
+    if (managedEventBusy) return;
+    const reason = window.prompt(label + ". Enter an administrative reason (at least 10 characters):");
+    if (reason === null) return;
+    if (!window.confirm(label + " for this event? This action is recorded in the audit log.")) return;
+    managedEventBusy = true;
+    $("managed-event-feedback").textContent = "Saving…";
+    try {
+      await api("event-management", new URLSearchParams(), "POST", { id, action, value, reason, requestId: crypto.randomUUID() });
+      await Promise.all([openManagedEvent(id), loadManagedEvents()]);
+      $("managed-event-feedback").textContent = label + " saved and audited.";
+    } catch (error) { $("managed-event-feedback").textContent = error.message; }
+    finally { managedEventBusy = false; }
+  }
+  async function submitManagedFeature(id, kind, value) {
+    if (managedEventBusy) return;
+    const reason = window.prompt("Reason for changing " + kind + " (at least 10 characters):");
+    if (reason === null || !window.confirm("Save this " + kind + " configuration for the event?")) return;
+    managedEventBusy = true;
+    try {
+      await api("event-feature", new URLSearchParams(), "POST", { id, kind, value, reason, requestId: crypto.randomUUID() });
+      await openManagedEvent(id);
+      $("managed-event-feedback").textContent = "Event configuration saved and audited.";
+    } catch (error) { $("managed-event-feedback").textContent = error.message; }
+    finally { managedEventBusy = false; }
+  }
   async function loadEvents() {
     const request = ++eventsRequest,
       session = state.session;
@@ -2271,6 +2480,7 @@ export async function mountDashboard({
       )
         return;
       state.eventRows = result.rows;
+      loadManagedEvents();
       $("calendar-coverage").textContent = result.limited
         ? "Limited to 120 event summaries; narrow the period."
         : "Event metadata for selected period · dateTime in UTC";

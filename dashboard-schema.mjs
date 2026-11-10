@@ -286,7 +286,7 @@ export const RESOURCES = {
   adminAuditLogs: resource(
     "adminAuditLogs",
     "at",
-    "actor action target reason at correlationId before after",
+    "actor adminUid eventId action target reason at correlationId requestId before after",
     ["super_admin", "finance", "operations", "support"],
     { newSchema: true },
   ),
@@ -431,6 +431,36 @@ export const MODULES = [
   },
 ];
 export const ACTIONS = {
+  "event.manage": {
+    resource: "events",
+    roles: ["super_admin", "operations"],
+    label: "Manage event operations",
+    description: "Audited event details, access, co-host and public visibility controls.",
+  },
+  "event.scan": {
+    resource: "events",
+    roles: ["super_admin", "operations"],
+    label: "Validate event tickets",
+    description: "Audited ticket entry validation with no ownership or payment edits.",
+  },
+  "event.notify": {
+    resource: "events",
+    roles: ["super_admin", "operations"],
+    label: "Send event notifications",
+    description: "Audited notifications to event buyers and RSVP recipients.",
+  },
+  "event.boost": {
+    resource: "events",
+    roles: ["super_admin", "operations"],
+    label: "Manage boost targeting",
+    description: "Change audience targeting without editing campaign billing or payment history.",
+  },
+  "event.configure": {
+    resource: "events",
+    roles: ["super_admin", "operations"],
+    label: "Configure event features",
+    description: "Audited raffle, vote, donation, RSVP, vendor and sponsor configuration.",
+  },
   "event.removeCoHost": {
     resource: "events",
     roles: ["super_admin", "operations"],

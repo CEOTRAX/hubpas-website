@@ -1,4 +1,5 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineSecret, defineString } = require("firebase-functions/params");
 const { handleAdmin } = require("./admin-api.cjs");
 const token = defineSecret("MONIME_ACCESS_TOKEN");
@@ -11,6 +12,9 @@ const mainAccount = defineString("MONIME_MAIN_FINANCIAL_ACCOUNT_ID", {
 const version = defineString("MONIME_VERSION", { default: "caph.2025-08-23" });
 const environment = defineString("MONIME_ENV", { default: "" });
 const actionsEnabled = defineString("ADMIN_ACTIONS_ENABLED", {
+  default: "false",
+});
+const eventActionsEnabled = defineString("ADMIN_EVENT_ACTIONS_ENABLED", {
   default: "false",
 });
 const accessEnabled = defineString("ADMIN_ACCESS_MANAGEMENT_ENABLED", {
@@ -29,7 +33,12 @@ exports.hubpasAdminApi = onRequest(
     process.env.MONIME_VERSION = version.value();
     process.env.MONIME_ENV = environment.value();
     process.env.ADMIN_ACTIONS_ENABLED = actionsEnabled.value();
+    process.env.ADMIN_EVENT_ACTIONS_ENABLED = eventActionsEnabled.value();
     process.env.ADMIN_ACCESS_MANAGEMENT_ENABLED = accessEnabled.value();
     return handleAdmin(req, res);
   },
+);
+exports.hubpasAdminEventNotification = onDocumentCreated(
+  { document: "adminEventNotifications/{notificationId}", region: "us-central1", timeoutSeconds: 540, memory: "512MiB" },
+  async event => require('./admin-event-notification-worker.cjs').deliverAdminEventNotification(event.data),
 );

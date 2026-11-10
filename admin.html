@@ -150,6 +150,22 @@
           <p id="source-label" class="code muted"></p>
           <p id="workflow-note" class="muted small"></p>
           <section id="event-panel" hidden>
+            <div class="card event-management">
+              <div class="section-heading"><div><div class="eyebrow">Platform operations</div><h2>Manage events</h2><p class="muted small">Search every host’s events and review access, sales, visibility and activity.</p></div></div>
+              <form id="event-management-filter" class="records-toolbar">
+                <label class="field search-field"><span>Event title</span><input id="event-manage-search" type="search" placeholder="Search titles" /></label>
+                <label class="field"><span>Event ID</span><input id="event-manage-id" type="search" placeholder="Exact ID" /></label>
+                <label class="field"><span>Host UID</span><input id="event-manage-host" type="search" placeholder="Exact UID" /></label>
+                <label class="field"><span>Status</span><select id="event-manage-status"><option value="">All statuses</option><option>draft</option><option>published</option><option>cancelled</option><option>ended</option></select></label>
+                <label class="field"><span>From</span><input id="event-manage-from" type="date" /></label>
+                <label class="field"><span>Through</span><input id="event-manage-to" type="date" /></label>
+                <button type="submit">Search events</button>
+              </form>
+              <p id="event-manage-message" class="muted small" role="status"></p>
+              <div id="event-manage-list" class="table-wrap"></div>
+              <div class="detail-actions"><button id="event-manage-previous" type="button">← Previous</button><button id="event-manage-next" type="button">Next →</button></div>
+            </div>
+            <section id="event-management-detail" class="card event-management-detail" hidden aria-label="Event management details"></section>
             <div id="event-metrics" class="calendar-metrics"></div>
             <div id="event-spotlight"></div>
             <div class="two-col">
@@ -379,6 +395,6 @@
         </form>
       </section>
     </div>
-    <script type="module" src="admin-console.mjs?v=20261023-live-1"></script>
+    <script type="module" src="admin-console.mjs?v=20261110-events-1"></script>
   </body>
 </html>

@@ -1234,6 +1234,11 @@ async function handleAdmin(req, res, provided) {
         canManageAccess: actor.roles.includes("super_admin"),
         accessManagementEnabled:
           process.env.ADMIN_ACCESS_MANAGEMENT_ENABLED === "true",
+        eventManagementEnabled:
+          process.env.ADMIN_EVENT_ACTIONS_ENABLED === "true" &&
+          actor.roles.some((role) => ["super_admin", "operations"].includes(role)) &&
+          !actor.deniedResources.includes("events") &&
+          !actor.deniedActions.includes("event.manage"),
       });
     if (req.method === "GET" && path === "dashboard-access")
       return send(
@@ -1326,6 +1331,23 @@ async function handleAdmin(req, res, provided) {
           eventInsights(url.searchParams, actor, services),
         ),
       );
+    if (req.method === "GET" && path === "event-management")
+      return send(res, 200, await require('./admin-events.cjs').listEvents(url.searchParams, actor, services, codec));
+    if (req.method === "GET" && path === "event-management-detail")
+      return send(res, 200, await require('./admin-events.cjs').eventDetail(url.searchParams, actor, services));
+    if (req.method === "POST" && path === "event-management") {
+      const result = await require('./admin-events.cjs').mutateEvent(await bodyFrom(req), actor, services);
+      storeFor(services).clear();
+      return send(res, 200, result);
+    }
+    if (req.method === "POST" && path === "event-ticket-scan")
+      return send(res, 200, await require('./admin-events.cjs').scanTicket(await bodyFrom(req), actor, services));
+    if (req.method === "POST" && path === "event-notification")
+      return send(res, 200, await require('./admin-events.cjs').queueNotification(await bodyFrom(req), actor, services));
+    if (req.method === "POST" && path === "event-boost")
+      return send(res, 200, await require('./admin-events.cjs').updateBoostTargeting(await bodyFrom(req), actor, services));
+    if (req.method === "POST" && path === "event-feature")
+      return send(res, 200, await require('./admin-events.cjs').configureEventFeature(await bodyFrom(req), actor, services));
     if (req.method === "GET" && path === "treasury") {
       allowResource(actor, "treasury");
       requireRole(actor, ["super_admin", "finance"]);
