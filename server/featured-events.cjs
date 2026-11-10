@@ -22,7 +22,7 @@ function publicText(value, limit = 500) {
 
 function publicEvent(doc, now = Date.now()) {
   const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-  if (!data || data.status !== 'published' || data.publicOrPrivate !== 'public' || data.moderationRemoved === true) return null;
+  if (!data || data.status !== 'published' || data.publicOrPrivate !== 'public' || data.moderationRemoved === true || ['hidden', 'removed'].includes(data.publicVisibility)) return null;
   const start = eventTime(data.dateTime);
   const end = eventTime(data.endDateTime);
   if (!Number.isFinite(start) || (Number.isFinite(end) ? end < now : start < now)) return null;
@@ -64,7 +64,7 @@ function publicEvent(doc, now = Date.now()) {
 function projectEvents(documents, now = Date.now()) {
   return documents.flatMap(doc => {
     const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-    if (!data || data.status !== 'published' || data.publicOrPrivate !== 'public' || data.moderationRemoved === true) return [];
+    if (!data || data.status !== 'published' || data.publicOrPrivate !== 'public' || data.moderationRemoved === true || ['hidden', 'removed'].includes(data.publicVisibility)) return [];
     const start = eventTime(data.dateTime);
     const end = eventTime(data.endDateTime);
     if (!Number.isFinite(start) || (Number.isFinite(end) ? end < now : start < now)) return [];

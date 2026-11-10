@@ -69,6 +69,9 @@ test('event detail rejects unpublished, private, removed and ended records', () 
   assert.equal(publicEvent(record('draft', {status: 'draft'}), now), null);
   assert.equal(publicEvent(record('private', {publicOrPrivate: 'private'}), now), null);
   assert.equal(publicEvent(record('removed', {moderationRemoved: true}), now), null);
+  assert.equal(publicEvent(record('hidden', {publicVisibility: 'hidden'}), now), null);
+  assert.equal(publicEvent(record('admin-removed', {publicVisibility: 'removed'}), now), null);
+  assert.deepEqual(projectEvents([record('hidden-list', {publicVisibility: 'hidden'})], now), []);
   assert.equal(publicEvent(record('past', {dateTime: '2026-01-01T20:00'}), now), null);
 });
 
