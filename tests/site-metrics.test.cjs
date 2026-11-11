@@ -9,10 +9,10 @@ test('Android download defaults to the new ARM64 APK and offers ARMv7',()=>{
   assert.equal(links[0]?.tagName,'A');
   const url=new URL(links[0].href);
   assert.equal(url.hostname,'firebasestorage.googleapis.com');
-  assert.match(url.pathname,/Hubpas-1\.0\.40-arm64-6abcbdfd\.apk$/);
+  assert.match(url.pathname,/Hubpas-1\.0\.40-arm64-9f3cb2ee\.apk$/);
   assert.equal(url.searchParams.get('alt'),'media');
   assert.match(url.searchParams.get('token'),/^[a-f0-9-]{36}$/);
-  assert.match(new URL(links[1].href).pathname,/Hubpas-1\.0\.40-armv7-a1802d7c\.apk$/);
+  assert.match(new URL(links[1].href).pathname,/Hubpas-1\.0\.40-armv7-718cac4b\.apk$/);
   assert.doesNotMatch(html,/Android download unavailable/);
   dom.window.close();
 });
