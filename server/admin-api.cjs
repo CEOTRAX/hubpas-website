@@ -229,7 +229,9 @@ function queryBase(
 }
 async function records(params, actor, services) {
   const { name, resource, ref } = await resourceFor(params, actor, services);
-  const sort = params.get("sort") || "newest";
+  const sort = name === "users" && !rangeFrom(params)
+    ? "id"
+    : params.get("sort") || "newest";
   if (!["newest", "oldest", "id"].includes(sort))
     fail(400, "Choose a supported list order.");
   if (sort === "id" && rangeFrom(params))
@@ -728,7 +730,7 @@ async function userSummary(params, actor, services) {
     backupEmail: contactAccess ? textField(raw.backupEmail, 254) : null,
     phone: contact(authUser?.phoneNumber || raw.phone, "phone"),
     joinedAt:
-      profile.data.createdAt || authDate(authUser?.metadata?.creationTime),
+      profile.data.onboardingCompletedAt || profile.data.createdAt || authDate(authUser?.metadata?.creationTime),
     lastSignInAt: authDate(authUser?.metadata?.lastSignInTime),
     streetAddress: contactAccess
       ? textField(addressData.streetAddress || raw.address)

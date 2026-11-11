@@ -232,9 +232,24 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
                     "T12:00:00Z",
                 ),
             },
+      onboardingCompletedAt:
+        i % 2
+          ? "2026-10-" + String((i % 28) + 1).padStart(2, "0") + "T12:00:00Z"
+          : {
+              toDate: () =>
+                new Date(
+                  "2026-10-" +
+                    String((i % 28) + 1).padStart(2, "0") +
+                    "T12:00:00Z",
+                ),
+            },
       walletPinHash: "must-not-leak",
     };
   initial["users/u-undated"] = { displayName: "Legacy user" };
+  initial["users/u-onboarded-only"] = {
+    name: "New customer",
+    onboardingCompletedAt: { toDate: () => new Date("2026-10-11T16:35:40Z") },
+  };
   const db = database(initial),
     base = "records?resource=users&from=2026-10-01&to=2026-10-31&pageSize=25";
   const first = await request(db, base);
@@ -259,7 +274,7 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
     db,
     base + "&cursor=" + encodeURIComponent(second.body.cursor),
   );
-  assert.equal(third.body.rows.length, 10);
+  assert.equal(third.body.rows.length, 11);
   assert.equal(third.body.cursor, null);
   const mismatch = await request(
     db,
@@ -267,7 +282,6 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
       encodeURIComponent(first.body.cursor),
   );
   assert.equal(mismatch.status, 400);
-  let newestCursor;
   for (const sort of ["newest", "oldest"]) {
     const allTime = "records?resource=users&sort=" + sort + "&pageSize=25";
     const pages = [];
@@ -278,14 +292,13 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
         allTime + (cursor ? "&cursor=" + encodeURIComponent(cursor) : ""),
       );
       assert.equal(response.status, 200);
-      if (sort === "newest" && !pages.length) newestCursor = response.body.cursor;
       pages.push(...response.body.rows);
       cursor = response.body.cursor;
     } while (cursor);
-    assert.equal(pages.length, 60);
-    assert.equal(new Set(pages.map((row) => row.id)).size, 60);
-    const dates = pages.map((row) => Date.parse(row.data.createdAt));
-    assert.deepEqual(dates, [...dates].sort((a, b) => sort === "newest" ? b - a : a - b));
+    assert.equal(pages.length, 62);
+    assert.equal(new Set(pages.map((row) => row.id)).size, 62);
+    assert.ok(pages.some((row) => row.id === "u-undated"));
+    assert.ok(pages.some((row) => row.id === "u-onboarded-only"));
   }
   const idOrder = await request(db, "records?resource=users&sort=id&pageSize=50");
   assert.equal(idOrder.status, 200);
@@ -293,11 +306,6 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
     idOrder.body.rows.map((row) => row.id),
     [...idOrder.body.rows.map((row) => row.id)].sort(),
   );
-  const oldCursor = await request(
-    db,
-    "records?resource=users&sort=oldest&cursor=" + encodeURIComponent(newestCursor),
-  );
-  assert.equal(oldCursor.status, 400);
   const idWithDates = await request(
     db,
     "records?resource=users&sort=id&from=2026-10-01&to=2026-10-31",
@@ -305,6 +313,9 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
   assert.equal(idWithDates.status, 400);
   const undated = await request(db, "records?resource=users&sort=id&searchField=id&search=u-undated");
   assert.equal(undated.body.rows[0].id, "u-undated");
+  const onboardedOnly = await request(db, "records?resource=users&from=2026-10-11&to=2026-10-11");
+  assert.ok(onboardedOnly.body.rows.some((row) => row.id === "u-onboarded-only"));
+  assert.ok(!onboardedOnly.body.rows.some((row) => row.id === "u-undated"));
 });
 test("a role-authorised moderation change and its audit are atomic and idempotent", async () => {
   const previous = process.env.ADMIN_ACTIONS_ENABLED;
@@ -800,8 +811,8 @@ test("overview uses aggregate counts instead of loading operational collections"
 test("resource insights count users exactly, group city and location fields, and enforce roles", async () => {
   const db = database({
     "adminRoleAssignments/operator": { active: true, roles: ["finance"] },
-    "users/one": { createdAt: new Date("2026-10-10T12:00:00Z"), city: "Freetown", userPlan: "basic", verified: true },
-    "users/two": { createdAt: new Date("2026-10-11T12:00:00Z"), location: "Bo", userPlan: "pro", subscription: { status: "expired", plan: "pro" }, verified: false },
+    "users/one": { onboardingCompletedAt: new Date("2026-10-10T12:00:00Z"), city: "Freetown", userPlan: "basic", verified: true },
+    "users/two": { onboardingCompletedAt: new Date("2026-10-11T12:00:00Z"), location: "Bo", userPlan: "pro", subscription: { status: "expired", plan: "pro" }, verified: false },
   });
   const result = await request(db, "resource-insights?resource=users&from=2026-10-01&to=2026-10-31");
   assert.equal(result.status, 200);

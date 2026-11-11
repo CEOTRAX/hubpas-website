@@ -27,8 +27,10 @@ export const RESOURCES = {
   ),
   users: resource(
     "users",
-    "createdAt",
-    "displayName name username email phone city location accountType userType profileType userPlan businessPlan venuePlan verified subscription createdAt updatedAt contentAccess adminLimits venueId venueOwnerId venueStaffRole walletBalance walletHeldBalance monimeFinancialAccountId monimeUvan wallet financialAccount",
+    "onboardingCompletedAt",
+    "displayName name username email phone city location accountType userType profileType userPlan businessPlan venuePlan verified subscription onboardingCompletedAt createdAt updatedAt contentAccess adminLimits venueId venueOwnerId venueStaffRole walletBalance walletHeldBalance monimeFinancialAccountId monimeUvan wallet financialAccount",
+    all,
+    { notice: "All dates includes every account, even if its onboarding date is missing. Date filters use the completed onboarding date." },
   ),
   wallet: resource(
     "wallet",

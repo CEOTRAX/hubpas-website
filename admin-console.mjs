@@ -83,6 +83,7 @@ export function previewData() {
           accountType: "paid",
           userPlan: "pro",
           verified: true,
+          onboardingCompletedAt: dayDate(3),
           createdAt: dayDate(3),
           contentAccess: { publicPublishingLocked: false },
           walletBalance: 2400,
@@ -97,6 +98,7 @@ export function previewData() {
           city: "Bo",
           userPlan: "basic",
           verified: false,
+          onboardingCompletedAt: dayDate(5),
           createdAt: dayDate(5),
           walletBalance: 650,
         },
@@ -842,6 +844,10 @@ export async function mountDashboard({
       await loadWebsiteInsights();
       return;
     }
+    if (id === "users" && !selection) {
+      $("period").value = "all";
+      $("custom-dates").hidden = true;
+    }
     showContent("records");
     state.resource =
       selection?.resource ||
@@ -942,15 +948,22 @@ export async function mountDashboard({
       .join("");
     $("record-search").value = "";
     $("record-status").value = "all";
-    $("record-sort").value = "newest";
+    $("record-sort").value = state.resource === "users" && $("period").value === "all" ? "id" : "newest";
     syncRecordSort();
     $("event-panel").hidden =
       state.module !== "events" || state.resource !== "events";
   }
   function syncRecordSort() {
-    const idOption = $("record-sort").querySelector('option[value="id"]');
-    idOption.disabled = $("period").value !== "all";
-    if (idOption.disabled && $("record-sort").value === "id")
+    const allDates = $("period").value === "all";
+    const users = state.resource === "users";
+    const options = $("record-sort");
+    const idOption = options.querySelector('option[value="id"]');
+    idOption.disabled = !allDates;
+    idOption.textContent = users ? "All accounts · includes undated" : "Record ID · includes undated";
+    for (const key of ["newest", "oldest"])
+      options.querySelector(`option[value="${key}"]`).disabled = users && allDates;
+    if (users && allDates) $("record-sort").value = "id";
+    else if (!allDates && $("record-sort").value === "id")
       $("record-sort").value = "newest";
   }
   async function loadResourceInsights() {
@@ -1336,7 +1349,7 @@ export async function mountDashboard({
         item("Phone", p.phone || d.phone) +
         item("City / district", d.location) +
         item("Recorded plan", readable("plan", d.userPlan || d.accountType)) +
-        item("Joined", readable("createdAt", p.joinedAt || d.createdAt)) +
+        item("Joined", readable("onboardingCompletedAt", p.joinedAt || d.onboardingCompletedAt || d.createdAt)) +
         item("Account status", result.authStatus) +
         (result.financialAccess
           ? item("Current wallet balance", leones(d.walletBalance ?? NaN)) +
