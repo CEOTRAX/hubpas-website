@@ -19,8 +19,7 @@ are excluded. The page still renders when the event feed is temporarily unavaila
 - `server/upload-apk.cjs`: publishes verified release APKs to Firebase Storage.
   APK binaries are ignored by Git. See `docs/ANDROID-DOWNLOAD.md`.
 
-The default Android button links to the current ARM64 release; an ARMv7 link is
-available for older 32-bit phones.
+The Android button links to the current universal release for 32-bit and 64-bit phones.
 iPhone users open the existing
 Hubpas PWA and can follow the Safari Home Screen instructions.
 
