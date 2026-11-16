@@ -1,11 +1,12 @@
 # Android download
 
-The [website download card](https://www.hubpas.com/#get-hubpas) offers the 13 November 2026 universal release APK for 32-bit and 64-bit Android phones.
+The [website download card](https://www.hubpas.com/#get-hubpas) offers separate signed 64-bit and 32-bit Android release APKs for version 1.0.41 (version code 42).
 
 | Release | Firebase Storage object | Size | SHA-256 |
 | --- | --- | ---: | --- |
-| Universal | `downloads/Hubpas-1.0.40-a42be903.apk` | 193,204,686 bytes | `a42be903796f1ce10c3a81f00d72d964b0dfe481e6317b5afaa13e03325f2dad` |
+| arm64 | `downloads/Hubpas-1.0.41-arm64-06d0c991.apk` | 70,626,607 bytes | `06d0c9910a9d6fabbf9e08cdf3428129552fb7364fa8509a52ac10b7e852ae8c` |
+| armv7 | `downloads/Hubpas-1.0.41-armv7-656e4eaf.apk` | 59,297,407 bytes | `656e4eaf1c091eb1644acdaa535c1f61688f325ad9554a895e90c969bdb2aaf9` |
 
-This is a non-debuggable release build of `com.hubpasstudio.hubpas`, version 1.0.40 (version code 41), signed by the existing Hubpas certificate (`166d6ea0ca77c0ed8e9a5702047b363d148d7ed33cc4a1f7d72b2d266e3485bb`). APK signature verification passed. The public download HEAD request returned HTTP 200 with the expected byte size, Android package content type, and attachment filename. The APK is excluded from Git due to size.
+Both are non-debuggable release builds of `com.hubpasstudio.hubpas`, signed by the existing Hubpas certificate. Signature, alignment, ABI, native class, and bundled web asset verification passed. The APKs are excluded from Git due to size.
 
-For a later signed release, verify package, signature, version and supported architectures, then run `node server/upload-apk-resilient.cjs <release.apk> <version> <expected-sha256> [universal|arm64|armv7]` with the configured local Firebase account. Publish each URL only after checking its download headers and size.
+For a later signed release, verify package, signature, version and supported architectures, then run `node server/upload-apk-resilient.cjs <release.apk> <version> <expected-sha256> [arm64|armv7]` with the configured local Firebase account. Publish each URL only after checking its download headers and size.
