@@ -1,11 +1,11 @@
 # Android download
 
-The [website download card](https://www.hubpas.com/#get-hubpas) offers separate signed 64-bit and 32-bit Android release APKs for version 1.0.44 (version code 45).
+The [website download card](https://www.hubpas.com/#get-hubpas) offers separate signed 64-bit and 32-bit Android release APKs for version 1.0.45 (version code 46).
 
 | Release | Firebase Storage object | Size | SHA-256 |
 | --- | --- | ---: | --- |
-| arm64 | `downloads/Hubpas-1.0.44-arm64-dde38aca.apk` | 70,639,513 bytes | `dde38aca6d3b87824bf0b8975e2ef79a0af9476334a70656b3126a324fe60cde` |
-| armv7 | `downloads/Hubpas-1.0.44-armv7-f5de7c92.apk` | 59,310,313 bytes | `f5de7c9284db0f9af248db0e9d54e398b6f79d3a3b06e330a3dbd90ae3c34217` |
+| arm64 | `downloads/Hubpas-1.0.45-arm64-347c00d0.apk` | 70,639,741 bytes | `347c00d0bc9a2cfb9777b2e786e1352e2a555a574bda435c8e9dc14a474f7127` |
+| armv7 | `downloads/Hubpas-1.0.45-armv7-a533830b.apk` | 59,310,541 bytes | `a533830b5ba0ec02f8106a62cb508e20556950b34b56377deb35ce23132462a8` |
 
 Both are non-debuggable release builds of `com.hubpasstudio.hubpas`, signed by the existing Hubpas certificate. Signature, alignment, ABI, native class, and bundled web asset verification passed. The APKs are excluded from Git due to size.
 
