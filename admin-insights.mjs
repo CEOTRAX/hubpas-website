@@ -144,6 +144,7 @@ export function recordedTotals(rows) {
 
 const facetsByResource = {
   users: [["Account type", ["accountType", "userPlan", "businessPlan", "subscription"]], ["Location", ["city", "location"]], ["Verification", ["verified"]]],
+  ultraAccessRequests: [["Review status", ["status"]], ["Billing preference", ["requestedPeriod"]]],
   adminRoleAssignments: [["Portal roles", ["roles"]], ["Access", ["active"]]],
   walletTransactions: [["Transaction type", ["type"]], ["Status", ["status"]]],
   walletTransfers: [["Status", ["status"]]],

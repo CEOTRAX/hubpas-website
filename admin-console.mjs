@@ -25,6 +25,7 @@ const titleCase = (value) =>
     .replace(/^./, (letter) => letter.toUpperCase());
 const resourceNames = {
   users: "Customers",
+  ultraAccessRequests: "Ultra requests",
   adminRoleAssignments: "Staff dashboard access",
   wallet: "Customer wallets",
   walletTransactions: "Wallet activity",
@@ -376,6 +377,7 @@ export async function mountDashboard({
     parent: null,
     nested: null,
     detail: null,
+    pendingUltra: 0,
   };
   const examples = previewData();
   const examplePeople = (row) => ({
@@ -729,6 +731,13 @@ export async function mountDashboard({
     }
     return value;
   }
+  async function refreshUltraPending() {
+    try {
+      const result = await api("ultra-pending");
+      state.pendingUltra = Math.max(0, Number(result.count) || 0);
+      nav();
+    } catch { /* The request list still reports a read error if access is unavailable. */ }
+  }
   function nav() {
     let section = "";
     $("navigation").innerHTML = MODULES.map((module) => {
@@ -761,6 +770,7 @@ export async function mountDashboard({
         module.icon +
         "</span>" +
         escape(module.label) +
+        (module.id === "subscriptions" && state.pendingUltra > 0 ? '<span class="badge warn" style="margin-left:auto">' + state.pendingUltra + ' Ultra</span>' : '') +
         "</button>"
       );
     }).join("");
@@ -851,6 +861,7 @@ export async function mountDashboard({
     showContent("records");
     state.resource =
       selection?.resource ||
+      (id === "subscriptions" && state.pendingUltra > 0 && state.session.resources.includes("ultraAccessRequests") ? "ultraAccessRequests" : null) ||
       module.resources.find((resource) =>
         state.session.resources.includes(resource),
       ) ||
@@ -1767,7 +1778,7 @@ export async function mountDashboard({
         '<label class="field"><span>Maximum published events</span><input id="publishing-limit" type="number" min="1" max="10000" value="1" required></label>';
     if (name === "user.grantPlan")
       extra =
-        '<label class="field"><span>Plan</span><select id="grant-plan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="business">Business</option></select></label><label class="field"><span>Expires through (UTC)</span><input id="grant-expiry" type="date" required></label>';
+        '<label class="field"><span>Plan</span><select id="grant-plan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="business">Business</option><option value="ultra">Ultra</option></select></label><label class="field"><span>Expires through (UTC)</span><input id="grant-expiry" type="date" required></label>';
     if (name === "event.removeCoHost")
       extra =
         '<label class="field"><span>Existing co-host user ID</span><select id="co-host-id">' +
@@ -1822,6 +1833,7 @@ export async function mountDashboard({
       if (payload.action === "pricing.update")
         payload.prices = JSON.parse($("pricing-values").value);
       await api("actions", new URLSearchParams(), "POST", payload);
+      if (payload.action.startsWith("ultra.")) void refreshUltraPending();
       $("dialog").hidden = true;
       notice("Change saved with an audit record.", "success");
       await loadRecords();
@@ -2343,10 +2355,11 @@ export async function mountDashboard({
       const canNotify = canEdit && !state.session.deniedActions?.includes("event.notify");
       const canBoost = canEdit && !state.session.deniedActions?.includes("event.boost");
       const canConfigure = canEdit && !state.session.deniedActions?.includes("event.configure");
+      const canManageVenuePartner = !preview && state.session.roles.includes("super_admin") && !state.session.deniedResources?.includes("events") && !state.session.deniedActions?.includes("venue.partner");
       const detailFields = ["title", "shortDescription", "description", "dateTime", "endDateTime", "location", "district", "fullAddress", "venueName", "category", "image", "promoVideo", "capacity"];
       panel.innerHTML = '<div class="section-heading"><div><div class="eyebrow">Event operations · ' + escape(id) + '</div><h2>' + escape(d.title || "Untitled event") + '</h2><p class="muted">Hosted by ' + escape(d.hostName || d.hostId || "Unknown host") + ' · ' + escape(d.status || "unknown") + ' · Public visibility: <strong>' + escape(d.publicVisibility || "visible") + '</strong></p><a href="/event.html?id=' + encodeURIComponent(id) + '" target="_blank" rel="noopener">View public page ↗</a></div><button id="managed-event-close" type="button">Close</button></div>' +
         '<div class="event-management-stats"><div><small>Views</small><strong>' + escape(d.views || 0) + '</strong></div><div><small>Going</small><strong>' + escape(d.goingCount || 0) + '</strong></div><div><small>RSVPs</small><strong>' + escape(d.rsvpCount || 0) + '</strong></div><div><small>Revenue recorded</small><strong>' + escape(d.revenue ?? "—") + '</strong></div><div><small>Boost campaigns</small><strong>' + detail.boosts.length + '</strong></div></div>' +
-        '<div class="event-management-tabs"><button type="button" data-event-tab="details">Event details</button><button type="button" data-event-tab="access">Access</button><button type="button" data-event-tab="lists">Access lists</button><button type="button" data-event-tab="analytics">Analytics & revenue</button><button type="button" data-event-tab="boosts">Boosts</button><button type="button" data-event-tab="notifications">Notifications</button><button type="button" data-event-tab="audit">Audit</button></div>' +
+        '<div class="event-management-tabs"><button type="button" data-event-tab="details">Event details</button><button type="button" data-event-tab="access">Access</button>' + (canManageVenuePartner ? '<button type="button" data-event-tab="partner">Venue partner</button>' : '') + '<button type="button" data-event-tab="lists">Access lists</button><button type="button" data-event-tab="analytics">Analytics & revenue</button><button type="button" data-event-tab="boosts">Boosts</button><button type="button" data-event-tab="notifications">Notifications</button><button type="button" data-event-tab="audit">Audit</button></div>' +
         '<div id="managed-event-tab"></div><p class="muted small">Lists show up to 50 recent matching records each; audit shows up to 100. Use the linked workspace records for deeper investigation.</p><p id="managed-event-feedback" class="muted small" role="status"></p>';
       $("managed-event-close").onclick = () => { panel.hidden = true; state.managedEvent = null; };
       const renderTab = tab => {
@@ -2361,6 +2374,24 @@ export async function mountDashboard({
             $("managed-detail-form").onsubmit = event => { event.preventDefault(); const patch = Object.fromEntries(new FormData(event.currentTarget).entries()); if (patch.capacity) patch.capacity = Number(patch.capacity); submitManagedAction(id, "details", patch, "Save event details"); };
             $("managed-cohost-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget, uid = form.elements.namedItem("uid").value.trim(), operation = event.submitter?.value; let next = [...(d.coHosts || [])].filter(item => item.userId !== uid); if (operation === "add") { const permissions = Object.fromEntries(["canEditEvent", "canManageTickets", "canViewAnalytics", "scanTickets", "canManageRevenue", "canSendNotifications"].map(key => [key, form.elements.namedItem(key).checked])); next.push({ userId: uid, status: "pending", permissions }); } submitManagedAction(id, "cohosts", next, operation === "add" ? "Add co-host" : "Remove co-host"); };
           }
+        } else if (tab === "partner" && canManageVenuePartner) {
+          const agreement = detail.venuePartnerAgreement || {};
+          const eligible = (d.coHosts || []).filter(item => item.status === "accepted" && item.permissions?.venuePartner === true);
+          content.innerHTML = '<div class="event-management-group"><h3>Venue partner share</h3><p class="muted small">Private platform agreement. The percentage applies only to Hubpas ticket commission on future settled sales. The host payout is unchanged.</p>' +
+            '<p>Current setting: <strong>' + (agreement.active ? escape((Number(agreement.shareBps) / 100).toFixed(2) + '% to ' + agreement.partnerUid) : 'Off') + '</strong></p></div>' +
+            '<form id="managed-partner-form" class="event-management-form"><label class="field"><span>Venue partner</span><select name="partnerUid" required><option value="">Choose an accepted venue partner</option>' + eligible.map(item => '<option value="' + escape(item.userId) + '" ' + (agreement.partnerUid === item.userId ? 'selected' : '') + '>' + escape(item.userId) + '</option>').join('') + '</select></label><label class="field"><span>Share of Hubpas ticket commission (%)</span><input name="sharePercent" type="number" min="0.01" max="100" step="0.01" value="' + escape(agreement.shareBps ? (Number(agreement.shareBps) / 100).toFixed(2) : '') + '" /></label><div class="detail-actions"><button type="submit" name="operation" value="enable" ' + (!eligible.length ? 'disabled' : '') + '>Save agreement</button><button type="submit" name="operation" value="disable">Turn off</button></div></form>' +
+            (!eligible.length ? '<p class="muted small">The host must first invite a venue partner and the account must accept. Venue partner access gives no event management permissions.</p>' : '');
+          $("managed-partner-form").onsubmit = async event => {
+            event.preventDefault(); if (managedEventBusy) return;
+            const form = event.currentTarget, active = event.submitter?.value !== "disable";
+            const value = { active, partnerUid: form.elements.namedItem("partnerUid").value, sharePercent: Number(form.elements.namedItem("sharePercent").value) };
+            const reason = window.prompt("Reason for changing this venue partner agreement (at least 10 characters):");
+            if (reason === null || !window.confirm((active ? "Save" : "Turn off") + " this private venue partner agreement?")) return;
+            managedEventBusy = true;
+            try { await api("event-venue-partner", new URLSearchParams(), "POST", { id, value, reason, requestId: crypto.randomUUID() }); await openManagedEvent(id); $("managed-event-feedback").textContent = "Venue partner agreement saved and audited."; }
+            catch (error) { $("managed-event-feedback").textContent = error.message; }
+            finally { managedEventBusy = false; }
+          };
         } else if (tab === "access") {
           const features = d.interactiveFeatures || {};
           content.innerHTML = '<div class="event-management-group"><h3>Access setup</h3><p class="muted small">Paid access history and sold counts are protected by the server.</p><div class="event-management-stats">' + ["ticketsEnabled", "tablesEnabled", "raffleEnabled", "donationsEnabled", "votesEnabled", "rsvpEnabled", "inviteEnabled", "itemsEnabled"].map(key => '<div><small>' + escape(fieldLabel(key)) + '</small><strong>' + (features[key] ? "On" : "Off") + '</strong></div>').join("") + '</div></div>' + managedRows("Ticket and table tiers", (d.ticketTiers || []).map((tier, index) => ({ id: tier.name || String(index), data: tier })), ["type", "price", "quantity", "sold"]) + managedRows("Donation tiers", (d.donationTiers || []).map((tier, index) => ({ id: tier.name || String(index), data: tier })), ["amount"]) + '<form id="managed-access-form" class="event-management-form"><h3>Configure access</h3>' + ["ticketsEnabled", "tablesEnabled", "raffleEnabled", "donationsEnabled", "votesEnabled", "rsvpEnabled", "inviteEnabled", "itemsEnabled"].map(key => '<label class="field"><span>' + escape(fieldLabel(key)) + '</span><input type="checkbox" name="' + key + '" ' + (features[key] ? 'checked' : '') + ' /></label>').join("") + (canEdit ? '<button type="submit">Save access setup</button>' : '') + '</form>' + (canEdit ? '<form id="managed-tier-form" class="event-management-form"><h3>Add ticket or table tier</h3><label class="field"><span>Type</span><select name="type"><option value="ticket">Ticket</option><option value="table">Table</option></select></label><label class="field"><span>Name</span><input name="name" required maxlength="100" /></label><label class="field"><span>Price (SLE)</span><input name="price" type="number" min="0" step="0.01" required /></label><label class="field"><span>Quantity</span><input name="quantity" type="number" min="1" step="1" required /></label><label class="field"><span>Seats per table</span><input name="tableCapacity" type="number" min="1" step="1" /></label><button type="submit">Add access tier</button></form><form id="managed-donation-form" class="event-management-form"><h3>Add donation tier</h3><label class="field"><span>Name</span><input name="name" required maxlength="100" /></label><label class="field"><span>Amount (SLE)</span><input name="amount" type="number" min="0.01" step="0.01" required /></label><button type="submit">Add donation tier</button></form>' : '');
@@ -2868,7 +2899,11 @@ export async function mountDashboard({
     $("signout").hidden = preview;
     $("live-signin").hidden = !preview;
     document.querySelector(".live-indicator").hidden = preview;
-    await openModule(!preview && new URLSearchParams(location.search).has('funding') ? 'treasury' : 'overview');
+    if (!preview && state.session.resources.includes("ultraAccessRequests")) await refreshUltraPending();
+    if (state.ultraTimer) clearInterval(state.ultraTimer);
+    if (!preview && state.session.resources.includes("ultraAccessRequests"))
+      state.ultraTimer = setInterval(() => { if (!document.hidden) void refreshUltraPending(); }, 30000);
+    await openModule(!preview && new URLSearchParams(location.search).has('funding') ? 'treasury' : !preview && state.pendingUltra > 0 && state.session.resources.includes("ultraAccessRequests") ? 'subscriptions' : 'overview');
   }
   if (preview) {
     await enter();

@@ -1,12 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "redirects": [
-    {
-      "source": "/admin.html",
-      "destination": "https://dmap-50136.web.app/admin.html",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/events/:id",
