@@ -40,6 +40,7 @@ const labels = {
   walletHeldBalance: "Held funds",
   accountType: "Account type",
   userPlan: "Recorded plan",
+  requestedPeriod: "Billing preference",
   publicOrPrivate: "Visibility",
   verified: "Verified account",
   totalPrice: "Total price",
@@ -142,6 +143,13 @@ export function personFor(row, key) {
 }
 export function columnsFor(resource) {
   const layouts = {
+    ultraAccessRequests: [
+      "displayName",
+      "email",
+      "requestedPeriod",
+      "status",
+      "createdAt",
+    ],
     walletTransactions: [
       "userId",
       "type",
@@ -177,6 +185,7 @@ export function columnsFor(resource) {
       "onboardingCompletedAt",
     ],
     events: ["title", "hostId", "dateTime", "venueName", "category", "status"],
+    eventStatsDaily: ["eventId", "date", "views", "purchases", "revenue"],
     tickets: ["userId", "ticketLabel", "price", "status", "createdAt"],
     ticketListings: ["sellerId", "buyerId", "price", "status", "createdAt"],
     venueBookings: [
@@ -250,8 +259,8 @@ export function columnsFor(resource) {
     directionsRequests: ["fromUserId", "toUserId", "status", "createdAt"],
     monime_webhooks: ["eventName", "receivedAt"],
     webhook: ["userId", "provider", "status", "amountGross", "createdAt"],
-    adminAuditLogs: ["actorId", "action", "status", "at"],
-    supportCases: ["subject", "status", "createdAt"],
+    adminAuditLogs: ["actor", "action", "target", "at"],
+    supportCases: ["targetResource", "targetId", "reason", "status", "createdAt"],
     moderationCases: ["reason", "status", "createdAt"],
     eventGoing: ["userId", "createdAt"],
     pollVotes: ["userId", "amount", "createdAt"],

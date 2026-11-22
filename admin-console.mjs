@@ -10,7 +10,7 @@ import {
   displayCell,
   recordTitle,
   activityLabel,
-} from "./record-view.mjs";
+} from "./record-view.mjs?v=20261122-list-columns-1";
 export const escape = (value) =>
   String(value ?? "")
     .replaceAll("&", "&amp;")
