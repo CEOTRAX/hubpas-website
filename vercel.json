@@ -1,22 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
+  "redirects": [
     {
       "source": "/admin.html",
-      "destination": "https://dmap-50136.web.app/admin.html"
-    },
-    {
-      "source": "/admin-console.mjs",
-      "destination": "https://dmap-50136.web.app/admin-console.mjs"
-    },
-    {
-      "source": "/dashboard-schema.mjs",
-      "destination": "https://dmap-50136.web.app/dashboard-schema.mjs"
-    },
-    {
-      "source": "/admin-insights.mjs",
-      "destination": "https://dmap-50136.web.app/admin-insights.mjs"
-    },
+      "destination": "https://dmap-50136.web.app/admin.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
     {
       "source": "/events/:id",
       "destination": "/event.html?id=:id"
