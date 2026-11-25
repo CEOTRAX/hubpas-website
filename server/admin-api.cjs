@@ -864,6 +864,17 @@ async function bodyFrom(req) {
 }
 function patchFor(action, input, current) {
   switch (action) {
+    case "ultra.approveRequest":
+    case "ultra.rejectRequest": {
+      if (current.status !== "pending") fail(409, "Only a pending Ultra request can be reviewed.");
+      return {
+        status: action === "ultra.approveRequest" ? "approved" : "rejected",
+        reviewedBy: input.actorId,
+        reviewedAt: new Date().toISOString(),
+        decisionReason: input.reason.trim(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
     case "event.removeCoHost": {
       if (
         !safeId(input.coHostId) ||
@@ -882,15 +893,17 @@ function patchFor(action, input, current) {
       };
     }
     case "user.grantPlan": {
-      if (!["basic", "pro", "business"].includes(input.plan))
-        fail(400, "Select Basic, Pro or Business.");
-      const expiry = new Date(input.expiresAt);
-      if (
-        !Number.isFinite(+expiry) ||
-        expiry <= new Date() ||
-        expiry - Date.now() > 366 * 86400000
-      )
-        fail(400, "Entitlement expiry must be within the next 366 days.");
+      if (!["basic", "pro", "business", "ultra"].includes(input.plan))
+        fail(400, "Select Basic, Pro, Business or Ultra.");
+      if (!Number.isInteger(input.durationMonths) || input.durationMonths < 1 || input.durationMonths > 12)
+        fail(400, "Choose a trial period from 1 to 12 months.");
+      const grantedAt = new Date();
+      const expiry = new Date(grantedAt);
+      const day = expiry.getUTCDate();
+      expiry.setUTCDate(1);
+      expiry.setUTCMonth(expiry.getUTCMonth() + input.durationMonths);
+      const lastDay = new Date(Date.UTC(expiry.getUTCFullYear(), expiry.getUTCMonth() + 1, 0)).getUTCDate();
+      expiry.setUTCDate(Math.min(day, lastDay));
       return {
         accountType: input.plan,
         userPlan: input.plan,
@@ -900,6 +913,9 @@ function patchFor(action, input, current) {
         "subscription.status": "active",
         "subscription.expiresAt": expiry.toISOString(),
         "subscription.adminGranted": true,
+        "subscription.grantKind": "free_trial",
+        "subscription.trialMonths": input.durationMonths,
+        "subscription.grantedAt": grantedAt.toISOString(),
       };
     }
     case "event.unpublish":
@@ -1002,7 +1018,7 @@ async function mutation(input, actor, services) {
       403,
       "This management action is restricted for your dashboard account.",
     );
-  if (process.env.ADMIN_ACTIONS_ENABLED !== "true")
+  if (process.env.ADMIN_ACTIONS_ENABLED !== "true" && !(input.action.startsWith("ultra.") && process.env.ULTRA_REVIEWS_ENABLED === "true") && !(input.action === "user.grantPlan" && process.env.ADMIN_PLAN_GRANTS_ENABLED === "true"))
     fail(
       503,
       "Mutations are disabled until rollout approval and permission checks are complete.",
@@ -1057,13 +1073,30 @@ async function mutation(input, actor, services) {
         409,
         "Record changed since it was reviewed. Refresh before making changes.",
       );
-    const patch = patchFor(input.action, input, before);
+    const ultraDecision = input.action === "ultra.approveRequest" || input.action === "ultra.rejectRequest";
+    if (ultraDecision && (!safeId(before.userId) || before.userId !== input.id))
+      fail(409, "Ultra request does not match its applicant.");
+    const applicantRef = ultraDecision ? services.db.doc("users/" + before.userId) : null;
+    if (applicantRef && !(await tx.get(applicantRef)).exists)
+      fail(404, "Ultra applicant account no longer exists.");
+    const patch = patchFor(input.action, { ...input, actorId: actor.uid }, before);
     const result = {
       ok: true,
       auditId: audit.id,
       correlationId: input.correlationId,
     };
     tx.update(ref, patch);
+    if (ultraDecision) {
+      const approved = input.action === "ultra.approveRequest";
+      tx.set(services.db.doc("users/" + before.userId + "/notifications/ultra_request_" + audit.id), {
+        type: "subscription",
+        title: approved ? "Ultra request approved" : "Ultra request update",
+        body: approved ? "You can now review and pay for Ultra in Account plans." : "Your Ultra request was not approved. You can contact Hubpas or submit a new request.",
+        route: "/profile",
+        read: false,
+        createdAt: services.FieldValue.serverTimestamp(),
+      });
+    }
     tx.create(audit, {
       actor: actor.uid,
       roles: actor.roles,
@@ -1222,14 +1255,13 @@ async function handleAdmin(req, res, provided) {
             RESOURCES[key].roles.some((role) => actor.roles.includes(role)),
         ),
         actions:
-          process.env.ADMIN_ACTIONS_ENABLED === "true"
-            ? Object.keys(ACTIONS).filter(
+          Object.keys(ACTIONS).filter(
                 (key) =>
+                  (process.env.ADMIN_ACTIONS_ENABLED === "true" || (key.startsWith("ultra.") && process.env.ULTRA_REVIEWS_ENABLED === "true") || (key === "user.grantPlan" && process.env.ADMIN_PLAN_GRANTS_ENABLED === "true")) &&
                   !actor.deniedActions.includes(key) &&
                   !actor.deniedResources.includes(ACTIONS[key].resource) &&
                   ACTIONS[key].roles.some((role) => actor.roles.includes(role)),
-              )
-            : [],
+              ),
         appDeploymentStatus: "unverified",
         deniedResources: actor.deniedResources,
         deniedActions: actor.deniedActions,
@@ -1242,6 +1274,12 @@ async function handleAdmin(req, res, provided) {
           !actor.deniedResources.includes("events") &&
           !actor.deniedActions.includes("event.manage"),
       });
+    if (req.method === "GET" && path === "ultra-pending") {
+      requireRole(actor, ["super_admin", "operations", "support"]);
+      allowResource(actor, "ultraAccessRequests");
+      const snapshot = await services.db.collection("ultraAccessRequests").where("status", "==", "pending").count().get();
+      return send(res, 200, { count: snapshot.data().count });
+    }
     if (req.method === "GET" && path === "dashboard-access")
       return send(
         res,
@@ -1339,6 +1377,11 @@ async function handleAdmin(req, res, provided) {
       return send(res, 200, await require('./admin-events.cjs').eventDetail(url.searchParams, actor, services));
     if (req.method === "POST" && path === "event-management") {
       const result = await require('./admin-events.cjs').mutateEvent(await bodyFrom(req), actor, services);
+      storeFor(services).clear();
+      return send(res, 200, result);
+    }
+    if (req.method === "POST" && path === "event-venue-partner") {
+      const result = await require('./admin-events.cjs').updateVenuePartnerAgreement(await bodyFrom(req), actor, services);
       storeFor(services).clear();
       return send(res, 200, result);
     }

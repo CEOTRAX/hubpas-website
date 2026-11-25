@@ -32,6 +32,13 @@ export const RESOURCES = {
     all,
     { notice: "All dates includes every account, even if its onboarding date is missing. Date filters use the completed onboarding date." },
   ),
+  ultraAccessRequests: resource(
+    "ultraAccessRequests",
+    "createdAt",
+    "userId displayName email requestedPeriod status createdAt updatedAt reviewedAt reviewedBy decisionReason paidAt",
+    ["super_admin", "operations", "support"],
+    { newSchema: true, notice: "Approval allows the applicant to pay; it does not grant a free subscription." },
+  ),
   wallet: resource(
     "wallet",
     "createdAt",
@@ -343,6 +350,7 @@ export const MODULES = [
     section: "People & access",
     resources: [
       "users",
+      "ultraAccessRequests",
       "hostSubscriptions",
       "platformPricing",
       "referralCodes",
@@ -473,9 +481,21 @@ export const ACTIONS = {
   "user.grantPlan": {
     resource: "users",
     roles: ["super_admin"],
-    label: "Grant plan entitlement",
+    label: "Grant free plan trial",
     description:
-      "Audited admin exception with expiry. No wallet charge, provider payment or revenue entry is created; historical amounts are preserved.",
+      "Choose a plan and a 1–12 month free trial. The entitlement expires automatically; no wallet charge, payment or revenue entry is created.",
+  },
+  "ultra.approveRequest": {
+    resource: "ultraAccessRequests",
+    roles: ["super_admin"],
+    label: "Approve Ultra request",
+    description: "Allow the applicant to pay for Ultra. Approval does not charge a wallet or activate the plan.",
+  },
+  "ultra.rejectRequest": {
+    resource: "ultraAccessRequests",
+    roles: ["super_admin"],
+    label: "Reject Ultra request",
+    description: "Close the request and tell the applicant the decision. They may submit a new request later.",
   },
   "user.suspend": {
     resource: "users",

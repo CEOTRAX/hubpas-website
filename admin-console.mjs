@@ -1778,7 +1778,9 @@ export async function mountDashboard({
         '<label class="field"><span>Maximum published events</span><input id="publishing-limit" type="number" min="1" max="10000" value="1" required></label>';
     if (name === "user.grantPlan")
       extra =
-        '<label class="field"><span>Plan</span><select id="grant-plan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="business">Business</option><option value="ultra">Ultra</option></select></label><label class="field"><span>Expires through (UTC)</span><input id="grant-expiry" type="date" required></label>';
+        '<label class="field"><span>Plan</span><select id="grant-plan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="business">Business</option><option value="ultra">Ultra</option></select></label><label class="field"><span>Free trial period</span><select id="grant-duration">' +
+        Array.from({ length: 12 }, (_, index) => '<option value="' + (index + 1) + '">' + (index + 1) + (index === 0 ? ' month' : ' months') + '</option>').join('') +
+        '</select></label><p class="small muted">Starts now and expires automatically. No payment or wallet charge is created.</p>';
     if (name === "event.removeCoHost")
       extra =
         '<label class="field"><span>Existing co-host user ID</span><select id="co-host-id">' +
@@ -1826,7 +1828,7 @@ export async function mountDashboard({
         payload.limit = Number($("publishing-limit").value);
       if (payload.action === "user.grantPlan") {
         payload.plan = $("grant-plan").value;
-        payload.expiresAt = $("grant-expiry").value + "T23:59:59.999Z";
+        payload.durationMonths = Number($("grant-duration").value);
       }
       if (payload.action === "event.removeCoHost")
         payload.coHostId = $("co-host-id").value;

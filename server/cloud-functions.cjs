@@ -14,6 +14,8 @@ const environment = defineString("MONIME_ENV", { default: "" });
 const actionsEnabled = defineString("ADMIN_ACTIONS_ENABLED", {
   default: "false",
 });
+const planGrantsEnabled = defineString("ADMIN_PLAN_GRANTS_ENABLED", { default: "true" });
+const ultraReviewsEnabled = defineString("ULTRA_REVIEWS_ENABLED", { default: "false" });
 const eventActionsEnabled = defineString("ADMIN_EVENT_ACTIONS_ENABLED", {
   default: "false",
 });
@@ -33,6 +35,8 @@ exports.hubpasAdminApi = onRequest(
     process.env.MONIME_VERSION = version.value();
     process.env.MONIME_ENV = environment.value();
     process.env.ADMIN_ACTIONS_ENABLED = actionsEnabled.value();
+    process.env.ADMIN_PLAN_GRANTS_ENABLED = planGrantsEnabled.value();
+    process.env.ULTRA_REVIEWS_ENABLED = ultraReviewsEnabled.value();
     process.env.ADMIN_EVENT_ACTIONS_ENABLED = eventActionsEnabled.value();
     process.env.ADMIN_ACCESS_MANAGEMENT_ENABLED = accessEnabled.value();
     return handleAdmin(req, res);

@@ -481,9 +481,9 @@ export const ACTIONS = {
   "user.grantPlan": {
     resource: "users",
     roles: ["super_admin"],
-    label: "Grant plan entitlement",
+    label: "Grant free plan trial",
     description:
-      "Audited admin exception with expiry. No wallet charge, provider payment or revenue entry is created; historical amounts are preserved.",
+      "Choose a plan and a 1–12 month free trial. The entitlement expires automatically; no wallet charge, payment or revenue entry is created.",
   },
   "ultra.approveRequest": {
     resource: "ultraAccessRequests",
