@@ -1,6 +1,6 @@
 const { test } = require("node:test"),
   assert = require("node:assert/strict");
-const { handleAdmin } = require("../server/admin-api.cjs"),
+const { handleAdmin, patchFor } = require("../server/admin-api.cjs"),
   { fingerprint } = require("../server/admin-policy.cjs");
 const value = (data, key, id) =>
   key === "__name__" ? id : key.split(".").reduce((v, k) => v?.[k], data);
@@ -155,13 +155,15 @@ function database(initial) {
           pending.push({ kind: "update", path: ref.path, data: patch }),
         create: (ref, data) =>
           pending.push({ kind: "create", path: ref.path, data }),
+        set: (ref, data) =>
+          pending.push({ kind: "set", path: ref.path, data }),
       };
       const result = await callback(tx);
       for (const op of pending)
         if (op.kind === "create" && docs.has(op.path))
           throw new Error("Already exists");
       for (const op of pending) {
-        if (op.kind === "create") docs.set(op.path, op.data);
+        if (op.kind === "create" || op.kind === "set") docs.set(op.path, op.data);
         else {
           const data = { ...docs.get(op.path) };
           for (const [key, v] of Object.entries(op.data)) {
@@ -316,6 +318,82 @@ test("server pagination combines ISO/timestamp dates and returns bounded non-ove
   const onboardedOnly = await request(db, "records?resource=users&from=2026-10-11&to=2026-10-11");
   assert.ok(onboardedOnly.body.rows.some((row) => row.id === "u-onboarded-only"));
   assert.ok(!onboardedOnly.body.rows.some((row) => row.id === "u-undated"));
+});
+test("Ultra applications are counted and approval unlocks payment without granting the plan", async () => {
+  const previous = process.env.ULTRA_REVIEWS_ENABLED;
+  const previousGeneral = process.env.ADMIN_ACTIONS_ENABLED;
+  process.env.ULTRA_REVIEWS_ENABLED = "true";
+  process.env.ADMIN_ACTIONS_ENABLED = "false";
+  try {
+    const uid = "applicant12345";
+    const db = database({
+      "adminRoleAssignments/operator": { active: true, roles: ["super_admin"] },
+      ["users/" + uid]: { displayName: "Applicant", userPlan: "free" },
+      ["ultraAccessRequests/" + uid]: { userId: uid, displayName: "Applicant", email: "applicant@example.com", requestedPeriod: "yearly", status: "pending", createdAt: "2026-11-21T10:00:00Z" },
+    });
+    assert.equal((await request(db, "ultra-pending")).body.count, 1);
+    const session = await request(db, "session");
+    assert.ok(session.body.actions.includes("ultra.approveRequest"));
+    assert.ok(!session.body.actions.includes("user.grantPlan"));
+    const list = await request(db, "records?resource=ultraAccessRequests");
+    assert.equal(list.body.rows[0].data.status, "pending");
+    const detail = await request(db, "record?resource=ultraAccessRequests&id=" + uid);
+    const body = { action: "ultra.approveRequest", id: uid, reason: "Business approved after review", correlationId: "ultra-approval-123", expectedVersion: detail.body.version };
+    assert.equal((await request(db, "actions", "POST", body)).status, 200);
+    assert.equal(db.docs.get("ultraAccessRequests/" + uid).status, "approved");
+    assert.equal(db.docs.get("users/" + uid).userPlan, "free");
+    assert.equal((await request(db, "ultra-pending")).body.count, 0);
+    assert.ok([...db.docs].some(([path, record]) => path.startsWith("users/" + uid + "/notifications/") && record.title === "Ultra request approved"));
+    assert.equal((await request(db, "actions", "POST", { ...body, correlationId: "ultra-again-123" })).status, 409);
+  } finally {
+    if (previous === undefined) delete process.env.ULTRA_REVIEWS_ENABLED;
+    else process.env.ULTRA_REVIEWS_ENABLED = previous;
+    if (previousGeneral === undefined) delete process.env.ADMIN_ACTIONS_ENABLED;
+    else process.env.ADMIN_ACTIONS_ENABLED = previousGeneral;
+  }
+});
+test("free trial grants accept 1–12 calendar months and reject invalid periods", () => {
+  const start = Date.now();
+  const one = patchFor("user.grantPlan", { plan: "pro", durationMonths: 1 }, {});
+  const two = patchFor("user.grantPlan", { plan: "business", durationMonths: 2 }, {});
+  assert.equal(one["subscription.grantKind"], "free_trial");
+  assert.equal(one["subscription.trialMonths"], 1);
+  assert.equal(two["subscription.trialMonths"], 2);
+  assert.equal(one["subscription.status"], "active");
+  assert.ok(Date.parse(one["subscription.expiresAt"]) > start);
+  assert.ok(Date.parse(two["subscription.expiresAt"]) > Date.parse(one["subscription.expiresAt"]));
+  for (const durationMonths of [0, 13, 1.5, "2", undefined])
+    assert.throws(() => patchFor("user.grantPlan", { plan: "pro", durationMonths }, {}), /trial period/);
+});
+test("dedicated free trial switch exposes only the plan grant to super admins", async () => {
+  const previousActions = process.env.ADMIN_ACTIONS_ENABLED;
+  const previousGrants = process.env.ADMIN_PLAN_GRANTS_ENABLED;
+  process.env.ADMIN_ACTIONS_ENABLED = "false";
+  process.env.ADMIN_PLAN_GRANTS_ENABLED = "true";
+  try {
+    const db = database({
+      "adminRoleAssignments/operator": { active: true, roles: ["super_admin"] },
+      "users/trial-user": { userPlan: "free", displayName: "Trial user" },
+    });
+    const session = await request(db, "session");
+    assert.ok(session.body.actions.includes("user.grantPlan"));
+    assert.ok(!session.body.actions.includes("event.unpublish"));
+    const result = await request(db, "actions", "POST", {
+      action: "user.grantPlan", id: "trial-user", plan: "pro", durationMonths: 2,
+      reason: "Promotional trial for organizer", correlationId: "trial-user-2-months",
+    });
+    assert.equal(result.status, 200);
+    const account = db.docs.get("users/trial-user");
+    assert.equal(account.userPlan, "pro");
+    assert.equal(account.subscription.trialMonths, 2);
+    assert.equal(account.subscription.grantKind, "free_trial");
+    assert.equal([...db.docs].filter(([path]) => path.startsWith("adminAuditLogs/")).length, 1);
+  } finally {
+    if (previousActions === undefined) delete process.env.ADMIN_ACTIONS_ENABLED;
+    else process.env.ADMIN_ACTIONS_ENABLED = previousActions;
+    if (previousGrants === undefined) delete process.env.ADMIN_PLAN_GRANTS_ENABLED;
+    else process.env.ADMIN_PLAN_GRANTS_ENABLED = previousGrants;
+  }
 });
 test("a role-authorised moderation change and its audit are atomic and idempotent", async () => {
   const previous = process.env.ADMIN_ACTIONS_ENABLED;
